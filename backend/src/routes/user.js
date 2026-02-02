@@ -101,11 +101,14 @@ router.post('/theme', requireAuth, async (req, res) => {
 router.get('/profile', requireAuth, async (req, res) => {
   try {
     const { rows } = await query(
-      'SELECT id, name, email, status, created_at FROM account.users WHERE id=$1',
+      "SELECT id, email, status, to_char(created_at, 'YYYY-MM-DD') AS created_at, to_char(updated_at, 'YYYY-MM-DD') AS updated_at FROM account.users WHERE id=$1",
       [req.user.id]
     );
     if (!rows[0]) return res.status(404).json({ error: 'User not found' });
+    console.log('Fetched user profile for user ID:', req.user.id);
+    
     res.json(rows[0]);
+
   } catch (e) {
     res.status(500).json({ error: 'Failed to fetch user' });
   }
@@ -115,7 +118,7 @@ router.get('/profile', requireAuth, async (req, res) => {
 router.get('/profile-detail', requireAuth, async (req, res) => {
   try {
     const { rows } = await query(
-      'SELECT display_name, avatar_url, phone, birthday, bio FROM account.profiles WHERE account_id=$1',
+      "SELECT display_name, avatar_url, phone, to_char(birthday, 'YYYY-MM-DD') AS birthday, bio FROM account.profiles WHERE account_id=$1",
       [req.user.id]
     );
     res.json(rows[0] || {});

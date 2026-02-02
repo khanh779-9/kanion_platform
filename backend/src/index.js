@@ -6,6 +6,7 @@ import { config } from './config.js';
 import { pool } from './db/pool.js';
 import { ensureMigrations } from './db/migrate.js';
 import { rateLimit } from './middleware/rateLimit.js';
+
 import authRoutes from './routes/auth.js';
 import vaultRoutes from './routes/vault.js';
 import notesRoutes from './routes/notes.js';
@@ -30,6 +31,7 @@ app.use('/api/auth', rateLimit('auth'), authRoutes);
 app.use('/api/vault', rateLimit('api'), vaultRoutes);
 app.use('/api/notes', rateLimit('api'), notesRoutes);
 app.use('/api/user', rateLimit('api'), userRoutes);
+
 
 // Initialize database migrations
 async function start() {

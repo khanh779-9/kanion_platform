@@ -772,6 +772,7 @@ CREATE TABLE IF NOT EXISTS "item" (
 	"password" BYTEA NULL DEFAULT NULL,
 	"created_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
 	"updated_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
+  "color" TEXT,
 	CONSTRAINT "fk_note_item_account" FOREIGN KEY ("account_id") REFERENCES "account"."users" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
 );
 

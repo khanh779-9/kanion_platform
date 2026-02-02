@@ -39,7 +39,7 @@ router.post("/register", async (req, res) => {
 
     const hash = await bcrypt.hash(password, 12);
     const insert = await db.query(
-      "INSERT INTO account.users(email,password) VALUES($1,$2) RETURNING id,email",
+      "INSERT INTO account.users(email,password,status) VALUES($1,$2,'active') RETURNING id,email",
       [email.toLowerCase(), hash],
     );
     const user = insert.rows[0];
@@ -73,8 +73,6 @@ router.post("/register", async (req, res) => {
     await db.query("ROLLBACK");
     console.error("Register error:", e.message, e.code, e.detail);
     res.status(500).json({ error: "Registration failed" });
-  } finally {
-    db.release();
   }
 });
 
@@ -101,7 +99,8 @@ router.post("/login", async (req, res) => {
 
     const user = result.rows[0];
 
-    if (user.status !== "active") {
+    const status = (user.status || "").toLowerCase();
+    if (status && status !== "active") {
       logAuditAction(
         null,
         AUDIT_ACTIONS.FAILED_LOGIN,
@@ -162,34 +161,50 @@ router.post("/login", async (req, res) => {
     }
 
     res.json({ token, user: { id: user.id, email: user.email } });
-  // Lấy 5 thông báo mới nhất
-  router.get("/user/notifications", requireAuth, async (req, res) => {
-    try {
-      const { rows } = await db.query(
-        "SELECT id, type, title, content, is_read, created_at FROM notification.items WHERE account_id=$1 ORDER BY created_at DESC LIMIT 5",
-        [req.user.id],
-      );
-      res.json(rows);
-    } catch (e) {
-      res.status(500).json({ error: "Failed to fetch notifications" });
-    }
-  });
-
-  // Lấy tất cả thông báo
-  router.get("/user/notifications/all", requireAuth, async (req, res) => {
-    try {
-      const { rows } = await db.query(
-        "SELECT id, type, title, content, is_read, created_at FROM notification.items WHERE account_id=$1 ORDER BY created_at DESC",
-        [req.user.id],
-      );
-      res.json(rows);
-    } catch (e) {
-      res.status(500).json({ error: "Failed to fetch notifications" });
-    }
-  });
   } catch (e) {
     console.error("Login error:", e.message, e.code, e.detail);
     res.status(500).json({ error: "Login failed" });
+  }
+});
+
+// Lấy 5 thông báo mới nhất
+router.get("/user/notifications", requireAuth, async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      "SELECT id, type, title, content, is_read, created_at FROM notification.items WHERE account_id=$1 ORDER BY created_at DESC LIMIT 5",
+      [req.user.id],
+    );
+    res.json(rows);
+  } catch (e) {
+    res.status(500).json({ error: "Failed to fetch notifications" });
+  }
+});
+
+// Lấy tất cả thông báo
+router.get("/user/notifications/all", requireAuth, async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      "SELECT id, type, title, content, is_read, created_at FROM notification.items WHERE account_id=$1 ORDER BY created_at DESC",
+      [req.user.id],
+    );
+    res.json(rows);
+  } catch (e) {
+    res.status(500).json({ error: "Failed to fetch notifications" });
+  }
+});
+
+// Đánh dấu thông báo là đã xem
+router.patch("/user/notifications/:id/read", requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { is_read } = req.body;
+    await db.query(
+      "UPDATE notification.items SET is_read=$1, read_at=NOW() WHERE id=$2 AND account_id=$3",
+      [is_read, id, req.user.id],
+    );
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: "Failed to update notification" });
   }
 });
 

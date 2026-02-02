@@ -1,35 +1,67 @@
-import { useEffect } from 'react';
 
-export default function Toast({ message, type = 'info', onClose, duration = 3500 }) {
+import React, { useEffect, useContext } from 'react';
+import { ThemeContext } from '@/components/ThemeContext.jsx';
+import { getThemeColor } from '../themeColors';
+
+
+export default function Toast({ toasts = [], onClose, duration = 3500 }) {
+  const { theme } = useContext(ThemeContext);
+
   useEffect(() => {
-    if (!message) return;
-    const timer = setTimeout(() => {
-      onClose && onClose();
-    }, duration);
-    return () => clearTimeout(timer);
-  }, [message, duration, onClose]);
+    if (!toasts.length) return;
+    const timers = toasts.map(t => setTimeout(() => onClose && onClose(t.id), duration));
+    return () => timers.forEach(clearTimeout);
+  }, [toasts, duration, onClose]);
 
-  if (!message) return null;
-
-  let bg = 'bg-emerald-600';
-  if (type === 'error') bg = 'bg-red-600';
-  if (type === 'success') bg = 'bg-emerald-600';
-  if (type === 'warning') bg = 'bg-yellow-500';
+  if (!toasts.length) return null;
 
   return (
-    <div
-      className={`fixed left-4 top-4 z-[100] min-w-[240px] max-w-xs px-4 py-3 rounded-lg shadow-lg text-white font-semibold flex items-center gap-2 ${bg}`}
-      style={{ pointerEvents: 'auto' }}
-      role="alert"
-    >
-      <span className="flex-1">{message}</span>
-      <button
-        className="ml-2 text-white/80 hover:text-white text-lg font-bold"
-        onClick={onClose}
-        aria-label="Close notification"
-      >
-        ×
-      </button>
+    <div className="fixed right-4 bottom-4 z-[100] flex flex-col gap-2" style={{ pointerEvents: 'auto' }}>
+      {toasts.map(t => {
+        const isError = t.type === 'error';
+        const isWarning = t.type === 'warning';
+        const isSuccess = !isError && !isWarning;
+
+        const accentClass = isError
+          ? 'bg-red-500 dark:bg-red-600'
+          : isWarning
+            ? 'bg-amber-500 dark:bg-amber-600'
+            : 'bg-emerald-500 dark:bg-emerald-600';
+        const ringClass = isError
+          ? 'ring-1 ring-red-500/30'
+          : isWarning
+            ? 'ring-1 ring-amber-500/30'
+            : 'ring-1 ring-emerald-500/30';
+        const bgClass = getThemeColor(theme, 'backgroundSecondary') || 'bg-white/90 dark:bg-slate-900/90';
+        const borderClass = getThemeColor(theme, 'border') || 'border-white/10';
+        const textClass = getThemeColor(theme, 'text') || 'text-slate-900 dark:text-slate-100';
+        const subTextClass = getThemeColor(theme, 'textSecondary') || 'text-slate-500 dark:text-slate-400';
+
+        return (
+          <div
+            key={t.id}
+            className={`min-w-[260px] max-w-sm px-4 py-3 rounded-xl shadow-xl border backdrop-blur-sm flex items-start gap-3 transition-all animate-toast-in ${bgClass} ${borderClass} ${ringClass}`}
+            role="alert"
+          >
+            <div className={`w-1.5 h-11 rounded-full ${accentClass}`} />
+            <div className="flex-1 min-w-0">
+              <div className={`text-base font-semibold ${textClass}`}>
+                {t.message}
+              </div>
+              <div className={`text-xs mt-1 ${subTextClass}`}>
+                {isError ? 'Error' : isWarning ? 'Warning' : 'Success'}
+              </div>
+            </div>
+            <button
+              className={`ml-1 ${subTextClass} hover:${textClass} text-xl leading-none font-bold`}
+              onClick={() => onClose && onClose(t.id)}
+              aria-label="Close notification"
+            >
+              ×
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 }

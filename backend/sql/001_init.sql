@@ -116,6 +116,7 @@ CREATE TABLE IF NOT EXISTS note.item (
   password BYTEA DEFAULT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  color TEXT DEFAULT NULL,
   CONSTRAINT fk_note_item_account FOREIGN KEY (account_id) REFERENCES account.users(id) ON UPDATE NO ACTION ON DELETE CASCADE
 );
 

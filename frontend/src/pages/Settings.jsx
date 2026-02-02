@@ -1,64 +1,80 @@
-
-import React, { useState } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
+import { getThemeColor } from '../themeColors';
 import { api } from '@/api/client';
+import { ThemeContext } from '@/components/ThemeContext.jsx';
+import { useTranslate } from '@/locales';
+import { showToast } from '@/components/toastService.js';
 
 const TABS = [
-  { key: 'appearance', label: 'Giao diện' },
-  { key: 'account', label: 'Tài khoản' },
-  { key: 'sessions', label: 'Phiên đăng nhập' },
-  { key: 'devices', label: 'Thiết bị' },
-  { key: 'users', label: 'Người dùng' },
+  { key: 'appearance', labelKey: 'settings.appearance' },
+  { key: 'account', labelKey: 'settings.account' },
+  { key: 'sessions', labelKey: 'settings.sessions' },
+  { key: 'devices', labelKey: 'settings.devices' },
+  { key: 'users', labelKey: 'settings.users' },
 ];
 
+
+
+
 export default function Settings() {
+  const { theme } = useContext(ThemeContext);
+  const { t } = useTranslate();
   const [tab, setTab] = useState('appearance');
+  let mainClass = 'mx-auto mt-10 rounded-2xl shadow-lg max-w-full md:max-w-3xl lg:max-w-4xl min-w-0 overflow-hidden flex flex-col md:flex-row ' + getThemeColor(theme, 'panel') + ' border ' + getThemeColor(theme, 'border');
   return (
-    <div className="mx-auto mt-10 bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800 max-w-full md:max-w-3xl lg:max-w-4xl min-w-0 overflow-hidden flex flex-col md:flex-row" style={{height:'600px',minHeight:'600px'}}>
+    <main className={"min-h-screen " + getThemeColor(theme, 'background')}>
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-20 flex justify-center">
+        <div className={mainClass + ' w-full'} style={{height:'600px',minHeight:'600px'}}>
       {/* Tab bar ngang trên mobile, sidebar dọc trên desktop */}
-      <div className="w-full md:w-[220px] lg:w-[240px] xl:w-[260px] bg-gray-50 dark:bg-gray-900 shrink-0">
+      <div className="w-full md:w-[220px] lg:w-[240px] xl:w-[260px] shrink-0"> 
         {/* Mobile: tab bar ngang, vuốt ngang */}
-        <div className="flex md:hidden overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700 border-b border-gray-200 dark:border-gray-700">
-          {TABS.map(t => (
+        <div className={`flex md:hidden overflow-x-auto scrollbar-thin border-b ${getThemeColor(theme, 'border')}`}> 
+          {TABS.map(tabItem => (
             <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`min-w-[120px] px-4 py-3 text-sm font-semibold transition-colors ${tab === t.key ? 'border-b-2 border-emerald-700 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+              key={tabItem.key}
+              onClick={() => setTab(tabItem.key)}
+              className={`min-w-[120px] px-4 py-3 text-sm font-semibold transition-colors ${tab === tabItem.key ? getThemeColor(theme, 'button') + ' border-b-2' : getThemeColor(theme, 'textSecondary') + ' hover:' + getThemeColor(theme, 'backgroundSecondary')}`}
             >
-              {t.label}
+              {tabItem.labelKey ? t(tabItem.labelKey) : tabItem.key}
             </button>
           ))}
         </div>
         {/* Desktop: sidebar dọc */}
-        <div className="hidden md:flex flex-col gap-1 h-full border-r border-gray-200 dark:border-gray-700 py-8 rounded-tl-2xl rounded-bl-2xl">
-          {TABS.map(t => (
+        <div className={`hidden md:flex flex-col gap-1 h-full border-r py-8 rounded-tl-2xl rounded-bl-2xl ${getThemeColor(theme, 'border')}`}> 
+          {TABS.map(tabItem => (
             <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`w-full text-left px-6 py-3 text-sm font-semibold rounded-l-xl transition-colors ${tab === t.key ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+              key={tabItem.key}
+              onClick={() => setTab(tabItem.key)}
+              className={`w-full text-left px-6 py-3 text-sm font-semibold rounded-l-xl transition-colors ${tab === tabItem.key ? getThemeColor(theme, 'button') : getThemeColor(theme, 'textSecondary') + ' hover:' + getThemeColor(theme, 'backgroundSecondary')}`}
             >
-              {t.label}
+              {tabItem.labelKey ? t(tabItem.labelKey) : tabItem.key}
             </button>
           ))}
         </div>
       </div>
       {/* Tabpage */}
-      <div className="flex-1 p-4 md:p-8 min-w-0 h-full rounded-b-2xl md:rounded-bl-none md:rounded-r-2xl bg-white dark:bg-gray-900 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
+      <div className="flex-1 p-4 md:p-8 min-w-0 h-full rounded-b-2xl md:rounded-bl-none md:rounded-r-2xl overflow-y-auto scrollbar-thin"> 
         {tab === 'account' && <AccountSettings />}
         {tab === 'sessions' && <SessionsSettings />}
         {tab === 'devices' && <DevicesSettings />}
         {tab === 'users' && <UsersSettings />}
         {tab === 'appearance' && <AppearanceSettings />}
       </div>
-    </div>
+        </div>
+      </section>
+    </main>
   );
 }
 
+
 function AppearanceSettings() {
-  const [theme, setTheme] = useState('auto');
+  const { theme: ctxTheme, setTheme: setCtxTheme } = useContext(ThemeContext);
+  const { language, changeLanguage, t } = useTranslate();
+  const [theme, setTheme] = useState(ctxTheme || 'auto');
+  const [currentLanguage, setCurrentLanguage] = useState(language);
   const [fontType, setFontType] = useState('sans-serif');
   const [fontName, setFontName] = useState('');
   const [fontSize, setFontSize] = useState('16');
-  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
 
   // Lấy settings từ backend khi mở tab
@@ -66,16 +82,16 @@ function AppearanceSettings() {
     setLoading(true);
     api.get('/user/appearance-settings')
       .then(res => {
-        if (res.data.theme) setTheme(res.data.theme);
+        if (res.data.theme) {
+          setTheme(res.data.theme);
+          if (setCtxTheme) setCtxTheme(res.data.theme);
+        }
         if (res.data.font_type) setFontType(res.data.font_type);
         if (res.data.font_name) setFontName(res.data.font_name);
         if (res.data['font-size']) setFontSize(res.data['font-size']);
-        // Áp dụng theme/font ngay khi load settings
-        const themeVal = res.data.theme || 'auto';
-        if (themeVal === 'dark') {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
+        if (res.data.language) {
+          setCurrentLanguage(res.data.language);
+          changeLanguage(res.data.language);
         }
         document.body.style.fontFamily = (res.data.font_name || res.data.font_type || 'sans-serif');
         document.body.style.fontSize = (res.data['font-size'] || '16') + 'px';
@@ -90,47 +106,44 @@ function AppearanceSettings() {
   ];
 
   const themeOptions = [
-    { value: 'light', label: 'Sáng' },
-    { value: 'dark', label: 'Tối' },
-    { value: 'auto', label: 'Tự động' },
+    { value: 'light', label: t('settings.light') },
+    { value: 'dark', label: t('settings.dark') },
+    { value: 'auto', label: t('settings.auto') },
   ];
 
   function handleSave(e) {
     e.preventDefault();
-    setMessage('');
     setLoading(true);
     // Gửi toàn bộ state lên backend
     const data = {
-      theme,
-      font_type: fontType,
-      font_name: fontName,
-      'font-size': fontSize
+      'theme': theme,
+      'font_type': fontType,
+      'font_name': fontName,
+      'font-size': fontSize,
+      'language': currentLanguage
     };
     api.post('/user/appearance-settings', data)
       .then(() => {
-        setMessage('Đã lưu cài đặt giao diện!');
-        // Áp dụng theme ngay
-        if (theme === 'dark') {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
-        // Áp dụng font
+        showToast(t('settings.saved'), 'success');
+        if (setCtxTheme) setCtxTheme(theme);
+        changeLanguage(currentLanguage);
         document.body.style.fontFamily = fontName || fontType;
         document.body.style.fontSize = fontSize + 'px';
+        // Reload page sau 1.5 giây để áp dụng ngôn ngữ
+        setTimeout(() => window.location.reload(), 1500);
       })
-      .catch(() => setMessage('Lưu thất bại!'))
+      .catch(() => showToast(t('settings.saveFailed'), 'error'))
       .finally(() => setLoading(false));
   }
 
-  if (loading) return <div>Đang tải cài đặt giao diện...</div>;
+  if (loading) return <div>{t('settings.loading')}</div>;
   return (
     <form className="space-y-6 max-w-lg mx-auto" onSubmit={handleSave}>
       <div>
-        <label className="block text-sm font-medium mb-2">Chủ đề</label>
+        <label className={"block text-sm font-normal mb-2 " + getThemeColor(theme, 'textSecondary')}>{t('settings.theme')}</label>
         <div className="flex gap-4">
           {themeOptions.map(opt => (
-            <label key={opt.value} className="inline-flex items-center gap-1">
+            <label key={opt.value} className={"inline-flex items-center gap-1 " + getThemeColor(theme, 'textSecondary')}>
               <input type="radio" name="theme" value={opt.value} checked={theme === opt.value} onChange={() => setTheme(opt.value)} />
               {opt.label}
             </label>
@@ -138,36 +151,43 @@ function AppearanceSettings() {
         </div>
       </div>
       <div>
-        <label className="block text-sm font-medium mb-2">Loại font</label>
-        <select className="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100" value={fontType} onChange={e => setFontType(e.target.value)}>
+        <label className={"block text-sm font-normal mb-2 " + getThemeColor(theme, 'textSecondary')}>{t('settings.fontType')}</label>
+        <select className={"w-full px-3 py-2 rounded-md border text-sm " + getThemeColor(theme, 'input')} value={fontType} onChange={e => setFontType(e.target.value)}>
           {fontTypeOptions.map(opt => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </select>
       </div>
       <div>
-        <label className="block text-sm font-medium mb-2">Tên font (tùy chọn)</label>
-        <input className="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100" value={fontName} onChange={e => setFontName(e.target.value)} placeholder="VD: Roboto, Arial, Times New Roman..." />
+        <label className={"block text-sm font-normal mb-2 " + getThemeColor(theme, 'textSecondary')}>{t('settings.fontName')} {t('settings.optional')}</label>
+        <input className={"w-full px-3 py-2 rounded-md border text-sm " + getThemeColor(theme, 'input')} value={fontName} onChange={e => setFontName(e.target.value)} placeholder={t('settings.fontNamePlaceholder')} />
       </div>
       <div>
-        <label className="block text-sm font-medium mb-2">Cỡ chữ</label>
-        <input type="number" min="10" max="48" className="w-32 px-3 py-2 rounded-md border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100" value={fontSize} onChange={e => setFontSize(e.target.value)} />
-        <span className="ml-2">px</span>
+        <label className={"block text-sm font-normal mb-2 " + getThemeColor(theme, 'textSecondary')}>{t('settings.fontSize')}</label>
+        <input type="number" min="10" max="48" className={"w-32 px-3 py-2 rounded-md border text-sm " + getThemeColor(theme, 'input')} value={fontSize} onChange={e => setFontSize(e.target.value)} />
+        <span className={"ml-2 " + getThemeColor(theme, 'textSecondary')}>{t('settings.px')}</span>
       </div>
-      <button type="submit" className="w-full py-2 rounded-md bg-emerald-700 text-white font-semibold hover:bg-emerald-800 transition-colors">Lưu cài đặt</button>
-      {message && <div className="text-center text-sm mt-2 text-emerald-700 dark:text-emerald-400">{message}</div>}
+      <div>
+        <label className={"block text-sm font-normal mb-2 " + getThemeColor(theme, 'textSecondary')}>{t('settings.language')}</label>
+        <select className={"w-full px-3 py-2 rounded-md border text-sm " + getThemeColor(theme, 'input')} value={currentLanguage} onChange={e => setCurrentLanguage(e.target.value)}>
+          <option value="vi">Tiếng Việt</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+      <button type="submit" className={"w-full py-2 rounded-md font-semibold transition-colors " + getThemeColor(theme, 'button')}>{t('settings.save')}</button>
     </form>
   );
 }
 
 
 function AccountSettings() {
+  const { theme } = useContext(ThemeContext);
+  const { t } = useTranslate();
   const [email, setEmail] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [repeatPassword, setRepeatPassword] = useState('');
   // Đã loại bỏ các trường profile
-  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
 
@@ -183,25 +203,24 @@ function AccountSettings() {
   }, []);
 
   function handleDeleteAccount() {
-    if (!window.confirm('Bạn chắc chắn muốn xóa tài khoản? Tất cả dữ liệu sẽ bị xóa vĩnh viễn!')) return;
+    if (!window.confirm(t('settings.deleteAccountWarning'))) return;
     setLoading(true);
     api.delete('/user/delete-account')
       .then(() => {
-        setMessage('Tài khoản đã được xóa. Đăng xuất...');
+        showToast(t('settings.deleteAccountSuccess'), 'success');
         setTimeout(() => {
           localStorage.removeItem('ks_token');
           window.location.href = '/login';
         }, 1500);
       })
-      .catch(err => setMessage(err?.response?.data?.error || 'Không thể xóa tài khoản!'))
+      .catch(err => showToast(err?.response?.data?.error || t('settings.deleteAccountError'), 'error'))
       .finally(() => setLoading(false));
   }
 
   function handleUpdate(e) {
     e.preventDefault();
-    setMessage('');
     if (newPassword && newPassword !== repeatPassword) {
-      setMessage('Mật khẩu mới nhập lại không khớp!');
+      showToast(t('settings.passwordMismatch'), 'error');
       return;
     }
     setLoading(true);
@@ -212,45 +231,42 @@ function AccountSettings() {
       newPassword: newPassword || undefined
     })
       .then(() => {
-        setMessage('Cập nhật thành công!');
+        showToast(t('settings.updateSuccess'), 'success');
         setCurrentPassword(''); setNewPassword(''); setRepeatPassword('');
       })
       .catch(err => {
-        setMessage(err?.response?.data?.error || 'Có lỗi xảy ra!');
+        showToast(err?.response?.data?.error || t('settings.updateError'), 'error');
       })
       .finally(() => setLoading(false));
   }
 
-  if (profileLoading) return <div>Đang tải thông tin...</div>;
+  if (profileLoading) return <div>{t('settings.loadingProfile')}</div>;
 
   return (
     <form className="space-y-5" onSubmit={handleUpdate}>
-      <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-        <label className="block text-sm font-medium mb-2">Email</label>
-        <input value={email} onChange={e => setEmail(e.target.value)} className="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100" />
+      <div className={"pt-2 border-t " + getThemeColor(theme, 'border')}>
+        <label className={"block text-sm font-normal mb-2 " + getThemeColor(theme, 'textSecondary')}>{t('settings.email')}</label>
+        <input value={email} onChange={e => setEmail(e.target.value)} className={"w-full px-3 py-2 rounded-md border text-sm " + getThemeColor(theme, 'input')} />
       </div>
-      <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-        <label className="block text-sm font-medium mb-2">Đổi mật khẩu</label>
-        <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} placeholder="Mật khẩu hiện tại" className="w-full px-3 py-2 mb-2 rounded-md border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100" />
-        <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Mật khẩu mới" className="w-full px-3 py-2 mb-2 rounded-md border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100" />
-        <input type="password" value={repeatPassword} onChange={e => setRepeatPassword(e.target.value)} placeholder="Nhập lại mật khẩu mới" className="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100" />
+      <div className={"pt-2 border-t " + getThemeColor(theme, 'border')}>
+        <label className={"block text-sm font-normal mb-2 " + getThemeColor(theme, 'textSecondary')}>{t('settings.changePassword')}</label>
+        <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} placeholder={t('settings.currentPassword')} className={"w-full px-3 py-2 mb-2 rounded-md border text-sm " + getThemeColor(theme, 'input')} />
+        <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder={t('settings.newPassword')} className={"w-full px-3 py-2 mb-2 rounded-md border text-sm " + getThemeColor(theme, 'input')} />
+        <input type="password" value={repeatPassword} onChange={e => setRepeatPassword(e.target.value)} placeholder={t('settings.repeatPassword')} className={"w-full px-3 py-2 rounded-md border text-sm " + getThemeColor(theme, 'input')} />
       </div>
-      <button type="submit" disabled={loading} className="w-full py-2 rounded-md bg-emerald-700 text-white font-semibold hover:bg-emerald-800 transition-colors">
-        {loading ? 'Đang cập nhật...' : 'Cập nhật'}
-      </button>
-      {message && <div className="text-center text-sm mt-2 text-emerald-700 dark:text-emerald-400">{message}</div>}
-      <fieldset className="mt-8 border-2 border-red-400 dark:border-red-600 rounded-xl bg-red-50 dark:bg-red-900/30 p-5">
-        <legend className="px-2 text-base font-semibold text-red-700 dark:text-red-300">Xóa tài khoản</legend>
-        <div className="mb-3 text-sm text-red-700 dark:text-red-300">
-          <strong>Cảnh báo:</strong> Hành động này sẽ xóa vĩnh viễn tài khoản và <b>toàn bộ dữ liệu</b> của bạn khỏi hệ thống (bao gồm ghi chú, vault, thiết bị, phiên đăng nhập, hồ sơ, ...). Không thể khôi phục lại sau khi xóa!
+      <button type="submit" disabled={loading} className={"w-full py-2 rounded-md font-semibold transition-colors " + getThemeColor(theme, 'button')}> {loading ? t('settings.updating') : t('settings.update')} </button>
+      <fieldset className={"mt-8 border-2 rounded-xl p-5 " + getThemeColor(theme, 'border')}>
+        <legend className={"px-2 text-base font-semibold " + getThemeColor(theme, 'dangerText')}>{t('settings.deleteAccount')}</legend>
+        <div className={"mb-3 text-sm " + getThemeColor(theme, 'dangerText')}>
+          <strong>{t('settings.warning')}:</strong> {t('settings.deleteAccountWarningDetail')}
         </div>
         <button
           type="button"
-          className="w-full py-2 rounded-md bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors"
+          className={"w-full py-2 rounded-md font-semibold transition-colors " + getThemeColor(theme, 'buttonDanger')}
           onClick={handleDeleteAccount}
           disabled={loading}
         >
-          Xóa tài khoản vĩnh viễn
+          {t('settings.deleteAccountPermanent')}
         </button>
       </fieldset>
     </form>
@@ -258,66 +274,65 @@ function AccountSettings() {
 }
 
 
-import { useEffect } from 'react';
 function SessionsSettings() {
+  const { theme } = useContext(ThemeContext);
+  const { t } = useTranslate();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState('');
   const [removing, setRemoving] = useState(null);
 
   function load() {
     setLoading(true);
     api.get('/user/sessions')
       .then(res => setSessions(res.data))
-      .catch(() => setErr('Không tải được danh sách phiên.'))
+      .catch(() => showToast(t('settings.sessionsLoadFailed'), 'error'))
       .finally(() => setLoading(false));
   }
   useEffect(() => { load(); }, []);
 
   function revoke(id) {
-    if (!window.confirm('Bạn chắc chắn muốn đăng xuất phiên này?')) return;
+    if (!window.confirm(t('settings.sessionsConfirmRevoke'))) return;
     setRemoving(id);
     api.delete(`/user/sessions/${id}`)
       .then(() => load())
-      .catch(() => setErr('Không thể xóa phiên.'))
+      .catch(() => showToast(t('settings.sessionsRevokeFailed'), 'error'))
       .finally(() => setRemoving(null));
   }
 
-  if (loading) return <div>Đang tải danh sách phiên...</div>;
-  if (err) return <div className="text-red-500">{err}</div>;
-  if (!sessions.length) return <div>Không có phiên đăng nhập nào.</div>;
+  if (loading) return <div>{t('settings.sessionsLoading')}</div>;
+  if (!sessions.length) return <div>{t('settings.sessionsEmpty')}</div>;
 
   return (
     <div>
-      <div className="mb-2 text-sm text-gray-500 dark:text-gray-400">Các phiên đăng nhập gần đây:</div>
+      <div className={"mb-2 text-sm " + getThemeColor(theme, 'textSecondary')}>{t('settings.sessionsRecent')}</div>
       <div className="overflow-x-auto">
-        <table className="min-w-full text-sm border">
+        <table className={"min-w-full text-sm border " + getThemeColor(theme, 'border') + ' ' + getThemeColor(theme, 'backgroundSecondary')}>
           <thead>
-            <tr className="bg-gray-100 dark:bg-gray-800">
-              <th className="px-3 py-2 border">IP</th>
-              <th className="px-3 py-2 border">Thiết bị</th>
-              <th className="px-3 py-2 border">Bắt đầu</th>
-              <th className="px-3 py-2 border">Hoạt động cuối</th>
-              <th className="px-3 py-2 border">Trạng thái</th>
-              <th className="px-3 py-2 border"></th>
+            <tr className={getThemeColor(theme, 'backgroundSecondary')}>
+              <th className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>{t('settings.sessionsIp')}</th>
+              <th className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>{t('settings.sessionsDevice')}</th>
+              <th className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>{t('settings.sessionsStarted')}</th>
+              <th className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>{t('settings.sessionsLastActive')}</th>
+              <th className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>{t('settings.sessionsStatus')}</th>
+              <th className={"px-3 py-2 border " + getThemeColor(theme, 'border')}></th>
             </tr>
           </thead>
           <tbody>
             {sessions.map(s => (
               <tr key={s.id} className={s.revoked_at ? 'opacity-60' : ''}>
-                <td className="px-3 py-2 border">{s.ip_address || '-'}</td>
-                <td className="px-3 py-2 border max-w-[180px] truncate" title={s.user_agent}>{s.user_agent?.slice(0, 40) || '-'}</td>
-                <td className="px-3 py-2 border">{s.created_at ? new Date(s.created_at).toLocaleString() : '-'}</td>
-                <td className="px-3 py-2 border">{s.last_activity_at ? new Date(s.last_activity_at).toLocaleString() : '-'}</td>
-                <td className="px-3 py-2 border">{s.revoked_at ? 'Đã đăng xuất' : 'Đang hoạt động'}</td>
-                <td className="px-3 py-2 border">
+                <td className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>{s.ip_address || '-'}</td>
+                <td className={"px-3 py-2 border max-w-[180px] truncate " + getThemeColor(theme, 'border')} title={s.user_agent}>{s.user_agent?.slice(0, 40) || '-'}</td>
+                <td className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>{s.created_at ? new Date(s.created_at).toLocaleString() : '-'}</td>
+                <td className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>{s.last_activity_at ? new Date(s.last_activity_at).toLocaleString() : '-'}</td>
+                <td className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>{s.revoked_at ? t('settings.sessionsRevoked') : t('settings.sessionsActive')}</td>
+                <td className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>
                   {!s.revoked_at && (
                     <button
-                      className="px-2 py-1 text-xs rounded bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50"
+                      className={"px-2 py-1 text-xs rounded font-semibold transition-colors " + getThemeColor(theme, 'buttonDanger') + ' disabled:opacity-50'}
                       onClick={() => revoke(s.id)}
                       disabled={removing === s.id}
                     >
-                      {removing === s.id ? 'Đang xóa...' : 'Đăng xuất'}
+                      {removing === s.id ? t('settings.sessionsRevoking') : t('settings.sessionsRevoke')}
                     </button>
                   )}
                 </td>
@@ -332,61 +347,61 @@ function SessionsSettings() {
 
 
 function DevicesSettings() {
+  const { theme } = useContext(ThemeContext);
+  const { t } = useTranslate();
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState('');
   const [removing, setRemoving] = useState(null);
 
   function load() {
     setLoading(true);
     api.get('/user/devices')
       .then(res => setDevices(res.data))
-      .catch(() => setErr('Không tải được danh sách thiết bị.'))
+      .catch(() => showToast(t('settings.devicesLoadFailed'), 'error'))
       .finally(() => setLoading(false));
   }
   useEffect(() => { load(); }, []);
 
   function remove(id) {
-    if (!window.confirm('Bạn chắc chắn muốn xóa thiết bị này?')) return;
+    if (!window.confirm(t('settings.devicesConfirmRemove'))) return;
     setRemoving(id);
     api.delete(`/user/devices/${id}`)
       .then(() => load())
-      .catch(() => setErr('Không thể xóa thiết bị.'))
+      .catch(() => showToast(t('settings.devicesRemoveFailed'), 'error'))
       .finally(() => setRemoving(null));
   }
 
-  if (loading) return <div>Đang tải danh sách thiết bị...</div>;
-  if (err) return <div className="text-red-500">{err}</div>;
-  if (!devices.length) return <div>Không có thiết bị nào.</div>;
+  if (loading) return <div>{t('settings.devicesLoading')}</div>;
+  if (!devices.length) return <div>{t('settings.devicesEmpty')}</div>;
 
   return (
     <div>
-      <div className="mb-2 text-sm text-gray-500 dark:text-gray-400">Các thiết bị đã đăng nhập:</div>
+      <div className={"mb-2 text-sm " + getThemeColor(theme, 'textSecondary')}>{t('settings.devicesList')}</div>
       <div className="overflow-x-auto">
-        <table className="min-w-full text-sm border">
+        <table className={"min-w-full text-sm border " + getThemeColor(theme, 'border') + ' ' + getThemeColor(theme, 'backgroundSecondary')}>
           <thead>
-            <tr className="bg-gray-100 dark:bg-gray-800">
-              <th className="px-3 py-2 border">Tên thiết bị</th>
-              <th className="px-3 py-2 border">Dấu vân tay</th>
-              <th className="px-3 py-2 border">Tin cậy</th>
-              <th className="px-3 py-2 border">Lần dùng cuối</th>
-              <th className="px-3 py-2 border"></th>
+            <tr className={getThemeColor(theme, 'backgroundSecondary')}>
+              <th className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>{t('settings.devicesName')}</th>
+              <th className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>{t('settings.devicesFingerprint')}</th>
+              <th className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>{t('settings.devicesTrusted')}</th>
+              <th className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>{t('settings.devicesLastUsed')}</th>
+              <th className={"px-3 py-2 border " + getThemeColor(theme, 'border')}></th>
             </tr>
           </thead>
           <tbody>
             {devices.map(d => (
               <tr key={d.id}>
-                <td className="px-3 py-2 border">{d.name || '-'}</td>
-                <td className="px-3 py-2 border max-w-[180px] truncate" title={d.fingerprint}>{d.fingerprint?.slice(0, 40) || '-'}</td>
-                <td className="px-3 py-2 border">{d.trusted ? '✔️' : ''}</td>
-                <td className="px-3 py-2 border">{d.last_used_at ? new Date(d.last_used_at).toLocaleString() : '-'}</td>
-                <td className="px-3 py-2 border">
+                <td className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>{d.name || '-'}</td>
+                <td className={"px-3 py-2 border max-w-[180px] truncate " + getThemeColor(theme, 'border')} title={d.fingerprint}>{d.fingerprint?.slice(0, 40) || '-'}</td>
+                <td className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>{d.trusted ? '✔️' : ''}</td>
+                <td className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>{d.last_used_at ? new Date(d.last_used_at).toLocaleString() : '-'}</td>
+                <td className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>
                   <button
-                    className="px-2 py-1 text-xs rounded bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50"
+                    className={"px-2 py-1 text-xs rounded font-semibold transition-colors " + getThemeColor(theme, 'buttonDanger') + ' disabled:opacity-50'}
                     onClick={() => remove(d.id)}
                     disabled={removing === d.id}
                   >
-                    {removing === d.id ? 'Đang xóa...' : 'Xóa'}
+                    {removing === d.id ? t('settings.devicesRemoving') : t('settings.devicesRemove')}
                   </button>
                 </td>
               </tr>
@@ -400,45 +415,45 @@ function DevicesSettings() {
 
 
 function UsersSettings() {
+  const { theme } = useContext(ThemeContext);
+  const { t } = useTranslate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState('');
 
   function load() {
     setLoading(true);
     api.get('/user/users')
       .then(res => setUsers(res.data))
-      .catch(() => setErr('Không tải được danh sách người dùng.'))
+      .catch(() => showToast(t('settings.usersLoadFailed'), 'error'))
       .finally(() => setLoading(false));
   }
   useEffect(() => { load(); }, []);
 
-  if (loading) return <div>Đang tải danh sách người dùng...</div>;
-  if (err) return <div className="text-red-500">{err}</div>;
-  if (!users.length) return <div>Không có người dùng nào.</div>;
+  if (loading) return <div>{t('settings.usersLoading')}</div>;
+  if (!users.length) return <div>{t('settings.usersEmpty')}</div>;
 
   return (
     <div>
-      <div className="mb-2 text-sm text-gray-500 dark:text-gray-400">Danh sách người dùng:</div>
+      <div className={"mb-2 text-sm " + getThemeColor(theme, 'textSecondary')}>{t('settings.usersList')}</div>
       <div className="overflow-x-auto">
-        <table className="min-w-full text-sm border">
+        <table className={"min-w-full text-sm border " + getThemeColor(theme, 'border') + ' ' + getThemeColor(theme, 'backgroundSecondary')}>
           <thead>
-            <tr className="bg-gray-100 dark:bg-gray-800">
-              <th className="px-3 py-2 border">ID</th>
-              <th className="px-3 py-2 border">Tên</th>
-              <th className="px-3 py-2 border">Email</th>
-              <th className="px-3 py-2 border">Trạng thái</th>
-              <th className="px-3 py-2 border">Tạo lúc</th>
+            <tr className={getThemeColor(theme, 'backgroundSecondary')}>
+              <th className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>{t('settings.usersId')}</th>
+              <th className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>{t('settings.usersName')}</th>
+              <th className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>{t('settings.usersEmail')}</th>
+              <th className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>{t('settings.usersStatus')}</th>
+              <th className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>{t('settings.usersCreatedAt')}</th>
             </tr>
           </thead>
           <tbody>
             {users.map(u => (
               <tr key={u.id}>
-                <td className="px-3 py-2 border">{u.id}</td>
-                <td className="px-3 py-2 border">{u.name}</td>
-                <td className="px-3 py-2 border">{u.email}</td>
-                <td className="px-3 py-2 border">{u.status}</td>
-                <td className="px-3 py-2 border">{u.created_at ? new Date(u.created_at).toLocaleString() : '-'}</td>
+                <td className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>{u.id}</td>
+                <td className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>{u.name}</td>
+                <td className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>{u.email}</td>
+                <td className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>{u.status}</td>
+                <td className={"px-3 py-2 border " + getThemeColor(theme, 'border')}>{u.created_at ? new Date(u.created_at).toLocaleString() : '-'}</td>
               </tr>
             ))}
           </tbody>
@@ -447,3 +462,5 @@ function UsersSettings() {
     </div>
   );
 }
+
+

@@ -9,6 +9,7 @@ const router = Router();
 const noteSchema = z.object({
   title: z.string().max(200).optional().nullable(),
   content: z.string().min(1, 'Content required').max(10000),
+  color: z.string().max(20).optional().nullable(),
   is_encrypted: z.boolean().optional(),
   password: z.string().optional().nullable()
 });
@@ -16,7 +17,7 @@ const noteSchema = z.object({
 router.get('/', requireAuth, async (req, res) => {
   try {
     const { rows } = await query(
-      `SELECT id,title,content,is_encrypted,created_at,updated_at 
+      `SELECT id,title,content,color,is_encrypted,created_at,updated_at 
        FROM note.item 
        WHERE account_id=$1 
        ORDER BY updated_at DESC`,
@@ -33,15 +34,15 @@ router.post('/', requireAuth, async (req, res) => {
   const parse = noteSchema.safeParse(req.body);
   if (!parse.success) return res.status(400).json({ error: parse.error.flatten() });
   
-  const { title, content, is_encrypted = false, password } = parse.data;
+  const { title, content, color, is_encrypted = false, password } = parse.data;
   
   try {
     const pwd = password ? Buffer.from(password, 'utf8') : null;
     const { rows } = await query(
-      `INSERT INTO note.item(account_id,title,content,is_encrypted,password)
-       VALUES($1,$2,$3,$4,$5) 
-       RETURNING id,title,content,is_encrypted,created_at,updated_at`,
-      [req.user.id, title ?? null, content, is_encrypted, pwd]
+      `INSERT INTO note.item(account_id,title,content,color,is_encrypted,password)
+       VALUES($1,$2,$3,$4,$5,$6) 
+       RETURNING id,title,content,color,is_encrypted,created_at,updated_at`,
+      [req.user.id, title ?? null, content, color ?? null, is_encrypted, pwd]
     );
     
     res.status(201).json(rows[0]);
@@ -72,7 +73,7 @@ router.put('/:id', requireAuth, async (req, res) => {
       `UPDATE note.item 
        SET ${setSql}, updated_at=now() 
        WHERE account_id=$1 AND id=$2 
-       RETURNING id,title,content,is_encrypted,created_at,updated_at`,
+       RETURNING id,title,content,color,is_encrypted,created_at,updated_at`,
       params
     );
     
