@@ -198,12 +198,17 @@ router.patch("/user/notifications/:id/read", requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { is_read } = req.body;
-    await db.query(
-      "UPDATE notification.items SET is_read=$1, read_at=NOW() WHERE id=$2 AND account_id=$3",
+    const read_at = is_read ? 'NOW()' : 'NULL';
+    const result = await db.query(
+      `UPDATE notification.items SET is_read=$1, read_at=${read_at} WHERE id=$2 AND account_id=$3 RETURNING *`,
       [is_read, id, req.user.id],
     );
-    res.json({ success: true });
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Notification not found" });
+    }
+    res.status(200).json({ success: true, notification: result.rows[0] });
   } catch (e) {
+    console.error('Update notification error:', e);
     res.status(500).json({ error: "Failed to update notification" });
   }
 });

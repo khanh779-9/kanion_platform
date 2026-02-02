@@ -12,5 +12,5 @@ export async function fetchAllNotifications() {
 
 export async function markNotificationAsRead(notificationId, isRead) {
   const res = await api.patch(`/auth/user/notifications/${notificationId}/read`, { is_read: isRead });
-  return res.data;
+  return res.data || { success: true };
 }

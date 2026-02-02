@@ -1,20 +1,25 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Lock, Bell, ChevronDown, LogOut, User, Settings, AlertCircle, CheckCircle, Info, Eye, EyeOff, X } from 'lucide-react';
+import { Lock, Bell, ChevronDown, LogOut, User, Settings, AlertCircle, CheckCircle, Info, Eye, EyeOff, X, Sun, Moon, Laptop } from 'lucide-react';
 import { useContext } from 'react';
 import { ThemeContext } from '@/components/ThemeContext.jsx';
 import { useTranslate } from '@/locales';
 import { getThemeColor } from '../themeColors';
 import { fetchLatestNotifications, fetchAllNotifications, markNotificationAsRead } from '@/api/notifications.js';
+import { api } from '@/api/client';
 
 export default function NavBar({ user, onLogout }) {
-  const { theme } = useContext(ThemeContext);
+  const { theme, setTheme } = useContext(ThemeContext);
   const { t, language } = useTranslate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const menuRef = useRef();
+  const themeMenuRef = useRef();
   const navigate = useNavigate();
   const notifRef = useRef();
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [displayName, setDisplayName] = useState('');
 
   const [notifications, setNotifications] = useState([]);
   const [notifLoading, setNotifLoading] = useState(false);
@@ -28,10 +33,34 @@ export default function NavBar({ user, onLogout }) {
     function handleClickOutside(e) {
       if (menuOpen && menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
       if (notifOpen && notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false);
+      if (themeMenuOpen && themeMenuRef.current && !themeMenuRef.current.contains(e.target)) setThemeMenuOpen(false);
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [menuOpen, notifOpen]);
+  }, [menuOpen, notifOpen, themeMenuOpen]);
+
+  useEffect(() => {
+    if (!user) return;
+    api.get('/user/profile-detail')
+      .then(res => {
+        const profile = res.data || {};
+        setAvatarUrl(profile.avatar_url || '');
+        setDisplayName(profile.display_name || user.name || user.email || '');
+      })
+      .catch(() => {
+        setDisplayName(user.name || user.email || '');
+      });
+  }, [user]);
+
+  async function handleThemeChange(nextTheme) {
+    if (setTheme) setTheme(nextTheme);
+    setThemeMenuOpen(false);
+    try {
+      const res = await api.get('/user/appearance-settings');
+      const data = { ...(res.data || {}), theme: nextTheme };
+      await api.post('/user/appearance-settings', data);
+    } catch {}
+  }
 
   useEffect(() => {
     if (notifOpen) {
@@ -86,6 +115,48 @@ export default function NavBar({ user, onLogout }) {
         {/* Navigation */}
         {user ? (
           <nav className="flex items-center gap-2 sm:gap-4">
+            {/* Theme Menu */}
+            <div className="relative" ref={themeMenuRef}>
+              <button
+                className={iconBtnClass}
+                onClick={() => setThemeMenuOpen(!themeMenuOpen)}
+                aria-label={t('settings.theme')}
+                title={t('settings.theme')}
+              >
+                {theme === 'dark' ? (
+                  <Moon size={18} className={getThemeColor(theme, 'icon')} />
+                ) : theme === 'light' ? (
+                  <Sun size={18} className={getThemeColor(theme, 'icon')} />
+                ) : (
+                  <Laptop size={18} className={getThemeColor(theme, 'icon')} />
+                )}
+              </button>
+              {themeMenuOpen && (
+                <div className={`absolute right-0 mt-2 w-44 rounded-xl shadow-lg border z-40 ${getThemeColor(theme, 'background')} ${getThemeColor(theme, 'border')}`}>
+                  <button
+                    onClick={() => handleThemeChange('light')}
+                    className={menuItemClass}
+                  >
+                    <Sun size={15} className={getThemeColor(theme, 'icon')} />
+                    {t('settings.light')}
+                  </button>
+                  <button
+                    onClick={() => handleThemeChange('dark')}
+                    className={menuItemClass}
+                  >
+                    <Moon size={15} className={getThemeColor(theme, 'icon')} />
+                    {t('settings.dark')}
+                  </button>
+                  <button
+                    onClick={() => handleThemeChange('auto')}
+                    className={menuItemClass}
+                  >
+                    <Laptop size={15} className={getThemeColor(theme, 'icon')} />
+                    {t('settings.auto')}
+                  </button>
+                </div>
+              )}
+            </div>
             {/* Notification Button */}
             <div className="relative" ref={notifRef}>
               <button
@@ -218,16 +289,24 @@ export default function NavBar({ user, onLogout }) {
                 className={accountBtnClass}
                 aria-label={t('navbar.profile')}
               >
-                <div className={"w-7 h-7 rounded-full flex items-center justify-center text-sm font-semibold border bg-transparent " + getThemeColor(theme, 'border') + ' ' + getThemeColor(theme, 'text')}>
-                  {user.name?.charAt(0).toUpperCase()}
-                </div>
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt="avatar"
+                    className={"w-7 h-7 rounded-full object-cover border " + getThemeColor(theme, 'border')}
+                  />
+                ) : (
+                  <div className={"w-7 h-7 rounded-full flex items-center justify-center text-sm font-semibold border bg-transparent " + getThemeColor(theme, 'border') + ' ' + getThemeColor(theme, 'text')}>
+                    {(displayName || user.email || '?').charAt(0).toUpperCase()}
+                  </div>
+                )}
                 <ChevronDown size={15} className={getThemeColor(theme, 'icon')} />
               </button>
               {menuOpen && (
                 <div className={`absolute right-0 mt-2 w-44 rounded-xl shadow-lg border z-40 ${getThemeColor(theme, 'background')} ${getThemeColor(theme, 'border')}`}>
                   <div className={`px-4 py-3 border-b ${getThemeColor(theme, 'border')}`}>
                     <p className={`text-xs font-medium ${getThemeColor(theme, 'textSecondary')}`}>{t('navbar.signedInAs')}</p>
-                    <p className={`text-sm font-semibold ${getThemeColor(theme, 'text')}`}>{user.name}</p>
+                    <p className={`text-sm font-semibold ${getThemeColor(theme, 'text')}`}>{displayName || user.name || user.email}</p>
                   </div>
                   <button
                     onClick={() => { setMenuOpen(false); navigate('/profile'); }}
@@ -405,9 +484,14 @@ export default function NavBar({ user, onLogout }) {
                                   </div>
                                 </div>
                                 <button
-                                  onClick={() => markNotificationAsRead(n.id, !n.is_read).then(() => {
-                                    setNotifications(notifs => notifs.map(x => x.id === n.id ? {...x, is_read: !x.is_read} : x));
-                                  })}
+                                  onClick={() => markNotificationAsRead(n.id, !n.is_read)
+                                    .then(() => {
+                                      setNotifications(notifs => notifs.map(x => x.id === n.id ? {...x, is_read: !x.is_read} : x));
+                                    })
+                                    .catch(err => {
+                                      console.error('Failed to update notification:', err);
+                                    })
+                                  }
                                   className={`flex-shrink-0 p-2 rounded-md transition-all text-xs ${n.is_read ? getThemeColor(theme, 'backgroundSecondary') + ' ' + getThemeColor(theme, 'textSecondary') : getThemeColor(theme, 'accent') + ' ' + getThemeColor(theme, 'accentText')}`}
                                   title={n.is_read ? t('navbar.markAsUnread') : t('navbar.markAsRead')}
                                 >

@@ -7,6 +7,7 @@ import { encryptSensitive, decryptSensitive } from '../utils/encryption.js';
 const router = Router();
 
 const upsertSchema = z.object({
+  type: z.enum(['website', 'email', 'server', 'database', 'application', 'other']).optional().default('other'),
   name: z.string().min(1, 'Name required').max(150),
   email: z.string().max(255).optional().nullable().refine(
     v => !v || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v),
@@ -20,16 +21,46 @@ const upsertSchema = z.object({
 router.get('/items', requireAuth, async (req, res) => {
   try {
     const { rows } = await query(
-      `SELECT id,type,name,email,description,created_at,updated_at 
+      `SELECT id,type,name,email,otp_secret,description,created_at,updated_at
        FROM vault.items 
        WHERE account_id=$1 
        ORDER BY updated_at DESC`,
       [req.user.id]
     );
-    res.json(rows);
+
+    const items = rows.map(item => ({
+      ...item,
+      otp_secret: item.otp_secret ? decryptSensitive(item.otp_secret) : null
+    }));
+
+    res.json(items);
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Failed to fetch items' });
+  }
+});
+
+router.get('/items/:id', requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) return res.status(400).json({ error: 'Invalid id' });
+  
+  try {
+    const { rows } = await query(
+      `SELECT * FROM vault.items WHERE account_id=$1 AND id=$2`,
+      [req.user.id, id]
+    );
+    
+    if (rows.length === 0) return res.status(404).json({ error: 'Not found' });
+    
+    const item = rows[0];
+    // Decrypt sensitive fields
+    if (item.password) item.password = decryptSensitive(item.password);
+    if (item.otp_secret) item.otp_secret = decryptSensitive(item.otp_secret);
+    
+    res.json(item);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to fetch item' });
   }
 });
 
@@ -37,7 +68,7 @@ router.post('/items', requireAuth, async (req, res) => {
   const parse = upsertSchema.safeParse(req.body);
   if (!parse.success) return res.status(400).json({ error: parse.error.flatten() });
   
-  const { name, email, password, otp_secret, description } = parse.data;
+  const { type, name, email, password, otp_secret, description } = parse.data;
   
   try {
     // Encrypt sensitive fields
@@ -46,10 +77,10 @@ router.post('/items', requireAuth, async (req, res) => {
     
     const { rows } = await query(
       `INSERT INTO vault.items
-       (account_id,name,email,password,otp_secret,description)
-       VALUES($1,$2,$3,$4,$5,$6)
-       RETURNING id,name,email,password,otp_secret,description,created_at,updated_at`,
-      [req.user.id, name, email ?? null, 
+       (account_id,type,name,email,password,otp_secret,description)
+       VALUES($1,$2,$3,$4,$5,$6,$7)
+       RETURNING id,type,name,email,description,created_at,updated_at`,
+      [req.user.id, type || 'other', name, email ?? null, 
        encryptedPassword ?? null, encryptedOtp ?? null, description ?? null]
     );
     

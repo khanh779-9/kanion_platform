@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { api } from '@/api/client';
-import { KeyRound, Plus, Trash2, Copy, Eye, EyeOff, Lock } from 'lucide-react';
+import { KeyRound, Plus, Trash2, Copy, Eye, EyeOff, Lock, Edit2, Clock } from 'lucide-react';
 
 import { useContext } from 'react';
 import { ThemeContext } from '@/components/ThemeContext.jsx';
@@ -8,16 +8,67 @@ import { useTranslate } from '@/locales';
 import { getThemeColor } from '../themeColors';
 import { showToast } from '@/components/toastService.js';
 
+// TOTP implementation
+function generateTOTP(secret, epochSeconds = Math.floor(Date.now() / 1000)) {
+  if (!secret) return null;
+  try {
+    let timeCounter = Math.floor(epochSeconds / 60);
+    
+    // Convert base32 to bytes
+    const base32chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    let bytes = [];
+    for (let i = 0; i < secret.length; i++) {
+      const idx = base32chars.indexOf(secret[i].toUpperCase());
+      if (idx === -1) return null;
+      bytes.push(...[(idx << 3) & 0xff, (idx >> 2) & 0xff]);
+    }
+    
+    // HMAC-SHA1
+    const crypto = window.crypto;
+    const key = new Uint8Array(bytes.filter((_, i) => i % 2 === 0)).slice(0, 20);
+    const counter = new Uint8Array(8);
+    let counterValue = timeCounter;
+    for (let i = 7; i >= 0; i--) {
+      counter[i] = counterValue & 0xff;
+      counterValue >>= 8;
+    }
+    
+    // Simplified: Use Web Crypto API for HMAC
+    return crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: 'SHA-1' }, false, ['sign'])
+      .then(k => crypto.subtle.sign('HMAC', k, counter))
+      .then(sig => {
+        const arr = new Uint8Array(sig);
+        const offset = arr[arr.length - 1] & 0xf;
+        const code = ((arr[offset] & 0x7f) << 24) | ((arr[offset + 1] & 0xff) << 16) | 
+                     ((arr[offset + 2] & 0xff) << 8) | (arr[offset + 3] & 0xff);
+        return (code % 1000000).toString().padStart(6, '0');
+      })
+      .catch(() => null);
+  } catch (e) {
+    return null;
+  }
+}
+
 export default function Vault() {
   const { theme } = useContext(ThemeContext);
   const { t } = useTranslate();
   const [items, setItems] = useState([]);
-  const [form, setForm] = useState({ name: '', email: '', password: '', otp_secret: '', card_number: '', card_expiry: '', card_cvv: '', description: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', otp_secret: '', description: '', type: 'other' });
   const [addType, setAddType] = useState(null); // 'login' | 'identity' | 'card'
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState(null); // for edit mode
+  const [editItem, setEditItem] = useState(null); // full item data for viewing/editing
+  const [showDetailModal, setShowDetailModal] = useState(false); // modal for viewing/editing item
+  const [isViewOnly, setIsViewOnly] = useState(false);
   const [revealed, setRevealed] = useState({});
   const [copied, setCopied] = useState('');
+  const [otpTimer, setOtpTimer] = useState({}); // for OTP countdown
+  const [totpCodes, setTotpCodes] = useState({}); // for TOTP code display
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const menuRef = useRef();
 
   useEffect(() => {
@@ -27,6 +78,47 @@ export default function Vault() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [addType]);
+
+  // OTP timer effect with TOTP generation
+  useEffect(() => {
+    const currentRemaining = 60 - (Math.floor(Date.now() / 1000) % 60);
+    // Generate TOTP codes for all items with otp_secret
+    items.forEach(item => {
+      if (item.otp_secret) {
+        // Initialize timer for this item
+        setOtpTimer(prev => ({ ...prev, [item.id]: currentRemaining }));
+
+        generateTOTP(item.otp_secret).then(code => {
+          if (code) {
+            setTotpCodes(prev => ({ ...prev, [item.id]: code }));
+          }
+        });
+      }
+    });
+    
+    const interval = setInterval(() => {
+      const remaining = 60 - (Math.floor(Date.now() / 1000) % 60);
+      setOtpTimer(prev => {
+        const updated = { ...prev };
+        items.forEach(item => {
+          if (item.otp_secret) updated[item.id] = remaining;
+        });
+        return updated;
+      });
+      
+      // Regenerate TOTP codes every 60 seconds
+      items.forEach(item => {
+        if (item.otp_secret) {
+          generateTOTP(item.otp_secret).then(code => {
+            if (code) {
+              setTotpCodes(prev => ({ ...prev, [item.id]: code }));
+            }
+          });
+        }
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [items]);
 
   async function load() {
     try {
@@ -49,8 +141,10 @@ export default function Vault() {
     }
     try {
       await api.post('/vault/items', form);
-      setForm({ name: '', email: '', password: '', otp_secret: '', description: '' });
+      showToast(t('vault.addedSuccess'), 'success');
+      setForm({ name: '', email: '', password: '', otp_secret: '', description: '', type: 'other' });
       setShowModal(false);
+      setAddType(null);
       load();
     } catch (e) {
       showToast(e?.response?.data?.error || t('vault.failedToAdd'), 'error');
@@ -67,6 +161,38 @@ export default function Vault() {
     }
   }
 
+  async function openDetailModal(id, viewOnly = false) {
+    try {
+      const { data } = await api.get(`/vault/items/${id}`);
+      setEditItem(data);
+      setEditingId(id);
+      setShowDetailModal(true);
+      setIsViewOnly(viewOnly);
+      // Initialize OTP timer
+      setOtpTimer(prev => ({ ...prev, [id]: 60 - (Math.floor(Date.now() / 1000) % 60) }));
+    } catch (e) {
+      showToast(e?.response?.data?.error || t('vault.failedToLoad'), 'error');
+    }
+  }
+
+  async function updateItem(e) {
+    e.preventDefault();
+    if (!editItem.name) {
+      showToast(t('vault.nameRequired'), 'error');
+      return;
+    }
+    try {
+      await api.put(`/vault/items/${editingId}`, editItem);
+      showToast(t('vault.updatedSuccess'), 'success');
+      setShowDetailModal(false);
+      setEditItem(null);
+      setEditingId(null);
+      load();
+    } catch (e) {
+      showToast(e?.response?.data?.error || t('vault.failedToAdd'), 'error');
+    }
+  }
+
   function copyToClipboard(text, id) {
     navigator.clipboard.writeText(text).then(() => {
       setCopied(id);
@@ -78,12 +204,17 @@ export default function Vault() {
     setRevealed(prev => ({ ...prev, [id]: !prev[id] }));
   }
 
-  const types = [
-    { value: 'password', label: t('vault.typePassword') },
-    { value: 'card', label: t('vault.typeCard') },
-    { value: 'otp', label: t('vault.typeOtp') },
-    { value: 'other', label: t('vault.typeOther') }
-  ];
+  function getTypeLabel(type) {
+    const typeMap = {
+      'website': t('vault.typeWebsite'),
+      'email': t('vault.typeEmail'),
+      'server': t('vault.typeServer'),
+      'database': t('vault.typeDatabase'),
+      'application': t('vault.typeApplication'),
+      'other': t('vault.typeOther')
+    };
+    return typeMap[type] || type;
+  }
 
   // Use themeColors.js for all theme-dependent color classes
   let mainClass = 'min-h-screen ' + getThemeColor(theme, 'background');
@@ -94,6 +225,17 @@ export default function Vault() {
   const iconBgClass = getThemeColor(theme, 'accent');
   const headingClass = getThemeColor(theme, 'cardTitle');
   const subheadingClass = getThemeColor(theme, 'cardDesc');
+
+  const filteredItems = items.filter(item => {
+    const nameMatch = item.name?.toLowerCase().includes(searchQuery.trim().toLowerCase());
+    const typeMatch = !typeFilter || item.type === typeFilter;
+
+    const itemDate = item.updated_at ? new Date(item.updated_at) : null;
+    const fromMatch = !dateFrom || (itemDate && itemDate >= new Date(dateFrom + 'T00:00:00'));
+    const toMatch = !dateTo || (itemDate && itemDate <= new Date(dateTo + 'T23:59:59'));
+
+    return nameMatch && typeMatch && fromMatch && toMatch;
+  });
   return (
     <main className={mainClass}>
       <div className="max-w-7xl mx-auto px-6 py-12">
@@ -121,13 +263,13 @@ export default function Vault() {
             </button>
             {addType === 'menu' && (
               <div ref={menuRef} className={`absolute right-0 mt-2 w-48 ${modalBg} rounded-lg shadow-lg z-40 border ${borderClass}`} style={{minWidth:'12rem'}}>
-                <button className={menuBtnClass} onClick={() => { setAddType('login'); setShowModal(true); }}>
+                <button className={menuBtnClass} onClick={() => { setAddType('login'); setForm(prev => ({ ...prev, type: 'website' })); setShowModal(true); }}>
                   {t('vault.addLogin')}
                 </button>
-                <button className={menuBtnClass} onClick={() => { setAddType('identity'); setShowModal(true); }}>
+                <button className={menuBtnClass} onClick={() => { setAddType('identity'); setForm(prev => ({ ...prev, type: 'website' })); setShowModal(true); }}>
                   {t('vault.addIdentity')}
                 </button>
-                <button className={menuBtnClass} onClick={() => { setAddType('card'); setShowModal(true); }}>
+                <button className={menuBtnClass} onClick={() => { setAddType('card'); setForm(prev => ({ ...prev, type: 'other' })); setShowModal(true); }}>
                   {t('vault.addCard')}
                 </button>
               </div>
@@ -135,23 +277,74 @@ export default function Vault() {
           </div>
         </div>
 
+        {/* Filters */}
+        <div className={`mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-3 rounded-xl border ${borderClass} ${getThemeColor(theme, 'backgroundSecondary')}`}>
+          <input
+            className={"w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 transition-all text-sm " + getThemeColor(theme, 'input')}
+            placeholder={`${t('vault.name')}...`}
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+          />
+          <select
+            className={"w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 transition-all text-sm " + getThemeColor(theme, 'input')}
+            value={typeFilter}
+            onChange={e => setTypeFilter(e.target.value)}
+          >
+            <option value="">All types</option>
+            <option value="website">{t('vault.typeWebsite')}</option>
+            <option value="email">{t('vault.typeEmail')}</option>
+            <option value="server">{t('vault.typeServer')}</option>
+            <option value="database">{t('vault.typeDatabase')}</option>
+            <option value="application">{t('vault.typeApplication')}</option>
+            <option value="other">{t('vault.typeOther')}</option>
+          </select>
+          <input
+            type="date"
+            className={"w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 transition-all text-sm " + getThemeColor(theme, 'input')}
+            value={dateFrom}
+            onChange={e => setDateFrom(e.target.value)}
+          />
+          <input
+            type="date"
+            className={"w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 transition-all text-sm " + getThemeColor(theme, 'input')}
+            value={dateTo}
+            onChange={e => setDateTo(e.target.value)}
+          />
+        </div>
+
         {/* Add Modal */}
         {showModal && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className={`${modalBg} rounded-2xl shadow-2xl max-w-2xl w-full p-8 border ${borderClass}`}>
-              <div className="flex items-center gap-3 mb-6">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4">
+            <div className={`${modalBg} rounded-2xl shadow-2xl max-w-2xl w-full p-4 sm:p-6 border ${borderClass} max-h-[85vh] overflow-y-auto`}>
+              <div className="flex items-center gap-2 mb-4">
                 <div className={"w-1 h-8 rounded-full " + getThemeColor(theme, 'accent')}></div>
-                <h2 className={`text-2xl font-bold ${headingClass}`}>
+                <h2 className={`text-xl font-bold ${headingClass}`}>
                   {addType === 'login' && t('vault.addLoginModal')}
                   {addType === 'identity' && t('vault.addIdentityModal')}
                   {addType === 'card' && t('vault.addCardModal')}
                 </h2>
               </div>
-              <form onSubmit={add} className="space-y-5">
+              <form onSubmit={add} className="space-y-3">
                 <div>
-                  <label className={`block text-sm font-medium ${subheadingClass} mb-2`}>{t('vault.name')} *</label>
+                  <label className={`block text-xs font-medium ${subheadingClass} mb-1`}>{t('vault.type')} *</label>
+                  <select
+                    className={"w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 transition-all text-sm " + getThemeColor(theme, 'input')}
+                    value={form.type}
+                    onChange={e => setForm({ ...form, type: e.target.value })}
+                    required
+                  >
+                    <option value="website">{t('vault.typeWebsite')}</option>
+                    <option value="email">{t('vault.typeEmail')}</option>
+                    <option value="server">{t('vault.typeServer')}</option>
+                    <option value="database">{t('vault.typeDatabase')}</option>
+                    <option value="application">{t('vault.typeApplication')}</option>
+                    <option value="other">{t('vault.typeOther')}</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={`block text-xs font-medium ${subheadingClass} mb-1`}>{t('vault.name')} *</label>
                   <input
-                    className={"w-full px-4 py-2.5 rounded-lg border focus:outline-none focus:ring-2 transition-all " + getThemeColor(theme, 'input')}
+                    className={"w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 transition-all text-sm " + getThemeColor(theme, 'input')}
                     placeholder={t('vault.namePlaceholder')}
                     value={form.name}
                     onChange={e => setForm({ ...form, name: e.target.value })}
@@ -161,9 +354,9 @@ export default function Vault() {
                 {(addType === 'login' || addType === 'identity') && (
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className={"block text-sm font-medium mb-2 " + getThemeColor(theme, 'textSecondary')}>{t('vault.email')}</label>
+                      <label className={"block text-xs font-medium mb-1 " + getThemeColor(theme, 'textSecondary')}>{t('vault.email')}</label>
                       <input
-                        className={"w-full px-4 py-2.5 rounded-lg border focus:outline-none focus:ring-2 transition-all " + getThemeColor(theme, 'input')}
+                        className={"w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 transition-all text-sm " + getThemeColor(theme, 'input')}
                         placeholder={t('login.emailPlaceholder')}
                         value={form.email}
                         onChange={e => setForm({ ...form, email: e.target.value })}
@@ -173,10 +366,10 @@ export default function Vault() {
                 )}
                 {addType === 'login' && (
                   <div>
-                    <label className={"block text-sm font-medium mb-2 " + getThemeColor(theme, 'textSecondary')}>{t('vault.password')}</label>
+                    <label className={"block text-xs font-medium mb-1 " + getThemeColor(theme, 'textSecondary')}>{t('vault.password')}</label>
                     <input
                       type="password"
-                      className={"w-full px-4 py-2.5 rounded-lg border focus:outline-none focus:ring-2 transition-all " + getThemeColor(theme, 'input')}
+                      className={"w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 transition-all text-sm " + getThemeColor(theme, 'input')}
                       placeholder={t('login.passwordPlaceholder')}
                       value={form.password}
                       onChange={e => setForm({ ...form, password: e.target.value })}
@@ -185,9 +378,9 @@ export default function Vault() {
                 )}
                 {addType === 'login' && (
                   <div>
-                    <label className={"block text-sm font-medium mb-2 " + getThemeColor(theme, 'textSecondary')}>{t('vault.otpSecret')}</label>
+                    <label className={"block text-xs font-medium mb-1 " + getThemeColor(theme, 'textSecondary')}>{t('vault.otpSecret')}</label>
                     <input
-                      className={"w-full px-4 py-2.5 rounded-lg border focus:outline-none focus:ring-2 transition-all " + getThemeColor(theme, 'input')}
+                      className={"w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 transition-all text-sm " + getThemeColor(theme, 'input')}
                       placeholder={t('vault.otpPlaceholder')}
                       value={form.otp_secret}
                       onChange={e => setForm({ ...form, otp_secret: e.target.value })}
@@ -195,59 +388,38 @@ export default function Vault() {
                   </div>
                 )}
                 {addType === 'card' && (
-                  <>
-                    <div>
-                      <label className={"block text-sm font-medium mb-2 " + getThemeColor(theme, 'textSecondary')}>{t('vault.cardNumber')}</label>
-                      <input
-                        className={"w-full px-4 py-2.5 rounded-lg border focus:outline-none focus:ring-2 transition-all " + getThemeColor(theme, 'input')}
-                        placeholder={t('vault.cardNumberPlaceholder')}
-                        value={form.card_number}
-                        onChange={e => setForm({ ...form, card_number: e.target.value })}
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className={"block text-sm font-medium mb-2 " + getThemeColor(theme, 'textSecondary')}>{t('vault.cardExpiry')}</label>
-                        <input
-                          className={"w-full px-4 py-2.5 rounded-lg border focus:outline-none focus:ring-2 transition-all " + getThemeColor(theme, 'input')}
-                          placeholder={t('vault.cardExpiryPlaceholder')}
-                          value={form.card_expiry}
-                          onChange={e => setForm({ ...form, card_expiry: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <label className={"block text-sm font-medium mb-2 " + getThemeColor(theme, 'textSecondary')}>{t('vault.cardCvv')}</label>
-                        <input
-                          className={"w-full px-4 py-2.5 rounded-lg border focus:outline-none focus:ring-2 transition-all " + getThemeColor(theme, 'input')}
-                          placeholder={t('vault.cardCvvPlaceholder')}
-                          value={form.card_cvv}
-                          onChange={e => setForm({ ...form, card_cvv: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                  </>
+                  <div>
+                    <label className={"block text-xs font-medium mb-1 " + getThemeColor(theme, 'textSecondary')}>{t('vault.password')}</label>
+                    <input
+                      type="password"
+                      className={"w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 transition-all text-sm " + getThemeColor(theme, 'input')}
+                      placeholder="Card details..."
+                      value={form.password}
+                      onChange={e => setForm({ ...form, password: e.target.value })}
+                    />
+                  </div>
                 )}
                 <div>
-                  <label className={"block text-sm font-medium mb-2 " + getThemeColor(theme, 'textSecondary')}>{t('vault.description')} {t('messages.optional')}</label>
+                  <label className={"block text-xs font-medium mb-1 " + getThemeColor(theme, 'textSecondary')}>{t('vault.description')} {t('messages.optional')}</label>
                   <textarea
-                    className={"w-full px-4 py-2.5 rounded-lg border focus:outline-none focus:ring-2 transition-all " + getThemeColor(theme, 'input')}
+                    className={"w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 transition-all text-sm " + getThemeColor(theme, 'input')}
                     placeholder={t('vault.descriptionPlaceholder')}
-                    rows="3"
+                    rows="2"
                     value={form.description}
                     onChange={e => setForm({ ...form, description: e.target.value })}
                   />
                 </div>
-                <div className="flex gap-3 pt-4">
+                <div className="flex gap-2 pt-2">
                   <button
                     type="submit"
-                    className={"flex-1 py-2.5 px-4 rounded-lg font-semibold text-sm shadow-md hover:shadow-lg transition-all " + getThemeColor(theme, 'button')}
+                    className={"flex-1 py-2 px-3 rounded-md font-semibold text-sm shadow-md hover:shadow-lg transition-all " + getThemeColor(theme, 'button')}
                   >
                     {t('vault.add')}
                   </button>
                   <button
                     type="button"
                     onClick={() => { setShowModal(false); setAddType(null); }}
-                    className={"flex-1 py-2.5 px-4 rounded-lg font-semibold text-sm " + getThemeColor(theme, 'backgroundSecondary') + ' ' + getThemeColor(theme, 'textSecondary')}
+                    className={"flex-1 py-2 px-3 rounded-md font-semibold text-sm " + getThemeColor(theme, 'backgroundSecondary') + ' ' + getThemeColor(theme, 'textSecondary')}
                   >
                     {t('notes.cancel')}
                   </button>
@@ -281,46 +453,247 @@ export default function Vault() {
               {t('vault.addFirst')}
             </button>
           </div>
+        ) : filteredItems.length === 0 ? (
+          <div className={"text-center py-16 rounded-2xl border-2 border-dashed " + getThemeColor(theme, 'backgroundSecondary') + ' ' + getThemeColor(theme, 'border')}>
+            <p className={getThemeColor(theme, 'textSecondary') + " text-sm"}>Không có kết quả phù hợp</p>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {items.map(item => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredItems.map(item => (
               <div
                 key={item.id}
-                className={"flex items-center rounded-xl shadow hover:shadow-lg transition-all p-4 sm:p-5 " + getThemeColor(theme, 'backgroundSecondary') + ' ' + getThemeColor(theme, 'border')}
+                className={"rounded-xl shadow hover:shadow-lg transition-all overflow-hidden " + getThemeColor(theme, 'backgroundSecondary') + ' border ' + getThemeColor(theme, 'border')}
               >
-                <div className={"flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center mr-4 " + getThemeColor(theme, 'accent')}>
-                  <KeyRound size={20} className={getThemeColor(theme, 'accentText')} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className={"text-base font-bold truncate " + getThemeColor(theme, 'cardTitle')}>{item.name}</h3>
-                  <div className="flex flex-wrap gap-2 mt-1">
-
-                    {item.email && (
-                      <span className={"inline-flex items-center text-xs rounded px-2 py-0.5 font-mono " + getThemeColor(theme, 'background') + ' ' + getThemeColor(theme, 'textSecondary')}>
-                        <span className="mr-1">📧</span>
-                        {item.email}
-                        <button onClick={() => copyToClipboard(item.email, `e-${item.id}`)} className={"ml-1 p-0.5 " + getThemeColor(theme, 'textSecondary') + ' hover:' + getThemeColor(theme, 'text')}>
-                          {copied === `e-${item.id}` ? '✓' : <Copy size={13} />}
-                        </button>
-                      </span>
-                    )}
+                <div className="p-3 space-y-2">
+                  {/* Type */}
+                  <div>
+                    <span className={"inline-flex text-xs font-semibold px-2.5 py-1 rounded-full " + getThemeColor(theme, 'accent') + ' ' + getThemeColor(theme, 'accentText')}>
+                      {getTypeLabel(item.type)}
+                    </span>
                   </div>
+
+                  {/* Name */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <h3 className={"text-lg font-bold truncate " + getThemeColor(theme, 'cardTitle')}>{item.name}</h3>
+                    </div>
+                    <div className="flex-shrink-0 flex items-center gap-1">
+                      <button
+                        onClick={() => openDetailModal(item.id, true)}
+                        className={"p-2 rounded-lg transition-all " + getThemeColor(theme, 'backgroundSecondary') + ' hover:' + getThemeColor(theme, 'accent')}
+                        title={t('vault.view')}
+                      >
+                        <Eye size={16} />
+                      </button>
+                      <button
+                        onClick={() => openDetailModal(item.id, false)}
+                        className={"p-2 rounded-lg transition-all " + getThemeColor(theme, 'backgroundSecondary') + ' hover:' + getThemeColor(theme, 'accent')}
+                        title={t('notes.edit')}
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      <button
+                        onClick={() => deleteItem(item.id)}
+                        className={"p-2 rounded-lg transition-all text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"}
+                        title={t('vault.delete')}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Description */}
                   {item.description && (
-                    <p className={"text-xs mt-2 line-clamp-2 " + getThemeColor(theme, 'cardDesc')}>{item.description}</p>
+                    <p className={"text-sm leading-relaxed " + getThemeColor(theme, 'cardDesc')}>{item.description}</p>
                   )}
+
+                  {/* TOTP Code */}
+                  {totpCodes[item.id] && (
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <span className={"text-xl font-semibold font-mono tracking-wide " + getThemeColor(theme, 'cardTitle')}>
+                          {totpCodes[item.id]}
+                        </span>
+                        <button
+                          onClick={() => copyToClipboard(totpCodes[item.id], `totp-${item.id}`)}
+                          className={"p-2 rounded-md transition-all " + getThemeColor(theme, 'backgroundSecondary') + ' hover:' + getThemeColor(theme, 'accent')}
+                          title={t('vault.copy')}
+                        >
+                          {copied === `totp-${item.id}` ? '✓' : <Copy size={18} />}
+                        </button>
+                      </div>
+
+                      {/* Circular Timer */}
+                      <div className="relative w-16 h-10 flex items-center justify-center">
+                        <svg className="absolute w-full h-full transform -rotate-90" viewBox="0 0 80 80">
+                          <circle cx="40" cy="40" r="36" fill="none" className={getThemeColor(theme, 'backgroundSecondary')} strokeWidth="2" />
+                            <circle 
+                            cx="40" 
+                            cy="40" 
+                            r="36" 
+                            fill="none" 
+                            className="stroke-green-500 transition-all"
+                            strokeWidth="3"
+                              strokeDasharray={`${(otpTimer[item.id] || 0) / 60 * 226.2} 226.2`}
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                        <div className="relative z-10 flex flex-col items-center">
+                          <span className={`text-sm font-semibold ${getThemeColor(theme, 'textSecondary')}`}>
+                            {otpTimer[item.id] || 0}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Timestamp */}
+                  <div className={"flex items-center justify-between pt-2 border-t text-xs " + getThemeColor(theme, 'border') + ' ' + getThemeColor(theme, 'textSecondary')}>
+                    <span>{new Date(item.updated_at).toLocaleDateString()}</span>
+                    <span>{new Date(item.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
                 </div>
-                <button
-                  onClick={() => deleteItem(item.id)}
-                  className={"ml-2 p-1.5 rounded-full transition-all " + getThemeColor(theme, 'buttonDanger')}
-                  title={t('notes.delete')}
-                >
-                  <Trash2 size={16} />
-                </button>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Detail/Edit Modal */}
+      {showDetailModal && editItem && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4">
+          <div className={`${modalBg} rounded-2xl shadow-2xl max-w-3xl w-full p-4 sm:p-6 border ${borderClass} max-h-[85vh] overflow-y-auto`}>
+            <div className="flex items-center gap-2 mb-4">
+              <div className={"w-1 h-8 rounded-full " + getThemeColor(theme, 'accent')}></div>
+              <h2 className={`text-xl font-bold ${headingClass}`}>{t('vault.editItem')}</h2>
+            </div>
+            <form onSubmit={isViewOnly ? (e) => e.preventDefault() : updateItem} className="space-y-3">
+              <div>
+                <label className={`block text-xs font-medium ${subheadingClass} mb-1`}>{t('vault.type')} *</label>
+                <select
+                  className={"w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 transition-all text-sm " + getThemeColor(theme, 'input')}
+                  value={editItem.type || 'other'}
+                  onChange={e => setEditItem({ ...editItem, type: e.target.value })}
+                  disabled={isViewOnly}
+                  required
+                >
+                  <option value="website">{t('vault.typeWebsite')}</option>
+                  <option value="email">{t('vault.typeEmail')}</option>
+                  <option value="server">{t('vault.typeServer')}</option>
+                  <option value="database">{t('vault.typeDatabase')}</option>
+                  <option value="application">{t('vault.typeApplication')}</option>
+                  <option value="other">{t('vault.typeOther')}</option>
+                </select>
+              </div>
+              <div>
+                <label className={`block text-xs font-medium ${subheadingClass} mb-1`}>{t('vault.name')} *</label>
+                <input
+                  className={"w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 transition-all text-sm " + getThemeColor(theme, 'input')}
+                  placeholder={t('vault.namePlaceholder')}
+                  value={editItem.name || ''}
+                  onChange={e => setEditItem({ ...editItem, name: e.target.value })}
+                  readOnly={isViewOnly}
+                  required
+                />
+              </div>
+              <div>
+                <label className={`block text-xs font-medium ${subheadingClass} mb-1`}>{t('vault.email')}</label>
+                <input
+                  className={"w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 transition-all text-sm " + getThemeColor(theme, 'input')}
+                  placeholder={t('login.emailPlaceholder')}
+                  value={editItem.email || ''}
+                  onChange={e => setEditItem({ ...editItem, email: e.target.value })}
+                  readOnly={isViewOnly}
+                />
+              </div>
+              <div>
+                <label className={`block text-xs font-medium ${subheadingClass} mb-1`}>{t('vault.password')}</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type={revealed[`pwd-${editingId}`] ? 'text' : 'password'}
+                    className={"flex-1 px-3 py-2 rounded-md border focus:outline-none focus:ring-2 transition-all text-sm " + getThemeColor(theme, 'input')}
+                    placeholder={t('login.passwordPlaceholder')}
+                    value={editItem.password || ''}
+                    onChange={e => setEditItem({ ...editItem, password: e.target.value })}
+                    readOnly={isViewOnly}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => toggleReveal(`pwd-${editingId}`)}
+                    className={"p-2 rounded-lg transition-all " + getThemeColor(theme, 'backgroundSecondary')}
+                  >
+                    {revealed[`pwd-${editingId}`] ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(editItem.password || '', `pwd-${editingId}`)}
+                    className={"p-2 rounded-lg transition-all " + getThemeColor(theme, 'backgroundSecondary')}
+                  >
+                    {copied === `pwd-${editingId}` ? '✓' : <Copy size={18} />}
+                  </button>
+                </div>
+              </div>
+              {editItem.otp_secret && (
+                <div>
+                  <label className={`block text-xs font-medium ${subheadingClass} mb-1`}>{t('vault.otpSecret')}</label>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type={revealed[`otp-${editingId}`] ? 'text' : 'password'}
+                        className={"flex-1 px-3 py-2 rounded-md border focus:outline-none focus:ring-2 transition-all font-mono text-sm " + getThemeColor(theme, 'input')}
+                        value={editItem.otp_secret || ''}
+                        readOnly
+                      />
+                      <button
+                        type="button"
+                        onClick={() => toggleReveal(`otp-${editingId}`)}
+                        className={"p-2 rounded-lg transition-all " + getThemeColor(theme, 'backgroundSecondary')}
+                      >
+                        {revealed[`otp-${editingId}`] ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(editItem.otp_secret || '', `otp-${editingId}`)}
+                        className={"p-2 rounded-lg transition-all " + getThemeColor(theme, 'backgroundSecondary')}
+                      >
+                        {copied === `otp-${editingId}` ? '✓' : <Copy size={18} />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div>
+                <label className={"block text-xs font-medium mb-1 " + getThemeColor(theme, 'textSecondary')}>{t('vault.description')} {t('messages.optional')}</label>
+                  <textarea
+                  className={"w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 transition-all text-sm " + getThemeColor(theme, 'input')}
+                  placeholder={t('vault.descriptionPlaceholder')}
+                  rows="2"
+                  value={editItem.description || ''}
+                    onChange={e => setEditItem({ ...editItem, description: e.target.value })}
+                    readOnly={isViewOnly}
+                />
+              </div>
+              <div className="flex gap-2 pt-2">
+                {!isViewOnly && (
+                  <button
+                    type="submit"
+                    className={"flex-1 py-2 px-3 rounded-md font-semibold text-sm shadow-md hover:shadow-lg transition-all " + getThemeColor(theme, 'button')}
+                  >
+                    {t('vault.save')}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => { setShowDetailModal(false); setEditItem(null); setEditingId(null); setIsViewOnly(false); }}
+                  className={"flex-1 py-2 px-3 rounded-md font-semibold text-sm " + getThemeColor(theme, 'backgroundSecondary') + ' ' + getThemeColor(theme, 'textSecondary')}
+                >
+                  {t('notes.cancel')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
