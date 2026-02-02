@@ -25,7 +25,12 @@
     "settings": "Cài đặt",
     "logout": "Đăng xuất",
     "login": "Đăng nhập",
-    "register": "Đăng ký"
+    "register": "Đăng ký",
+    "notif_login_title": "Đăng nhập tài khoản",
+    "notif_browser": "Trình duyệt",
+    "notif_device": "Thiết bị",
+    "notif_os": "Hệ điều hành",
+    "notif_ip": "IP"
   },
   "home": {
     "tagline": "Bảo mật Cuộc sống Của Bạn",
@@ -118,7 +123,10 @@
     "share": "Chia Sẻ",
     "copy": "Sao Chép",
     "copied": "Đã sao chép!",
-    "edit": "Chỉnh Sửa"
+    "edit": "Chỉnh Sửa",
+    "close": "Đóng",
+    "updated": "Cập nhật",
+    "searchByTitle": "Tìm kiếm theo tiêu đề hoặc nội dung"
   },
   "vault": {
     "personalVault": "Khoá Cá Nhân",

@@ -72,7 +72,7 @@ function AppearanceSettings() {
   const { language, changeLanguage, t } = useTranslate();
   const [theme, setTheme] = useState(ctxTheme || 'auto');
   const [currentLanguage, setCurrentLanguage] = useState(language);
-  const [fontType, setFontType] = useState('sans-serif');
+  const [fontType, setFontType] = useState('400');
   const [fontName, setFontName] = useState('');
   const [fontSize, setFontSize] = useState('16');
   const [loading, setLoading] = useState(true);
@@ -93,16 +93,37 @@ function AppearanceSettings() {
           setCurrentLanguage(res.data.language);
           changeLanguage(res.data.language);
         }
-        document.body.style.fontFamily = (res.data.font_name || res.data.font_type || 'sans-serif');
+        document.body.style.fontFamily = (res.data.font_name || 'sans-serif');
+        document.body.style.fontWeight = (res.data.font_type || '400');
         document.body.style.fontSize = (res.data['font-size'] || '16') + 'px';
       })
       .finally(() => setLoading(false));
   }, []);
 
   const fontTypeOptions = [
-    { value: 'sans-serif', label: 'Sans-serif' },
-    { value: 'serif', label: 'Serif' },
-    { value: 'monospace', label: 'Monospace' },
+    { value: '400', label: 'Normal' },
+    { value: '300', label: 'Light' },
+    { value: '500', label: 'Medium' },
+    { value: '600', label: 'Semi Bold' },
+    { value: '700', label: 'Bold' },
+  ];
+
+  const googleFonts = [
+    // Sans-serif - Popular & Modern
+    { value: 'Roboto', label: 'Roboto', category: 'Sans-serif' },
+    { value: 'Open Sans', label: 'Open Sans', category: 'Sans-serif' },
+    { value: 'Lato', label: 'Lato', category: 'Sans-serif' },
+    { value: 'Montserrat', label: 'Montserrat', category: 'Sans-serif' },
+    { value: 'Poppins', label: 'Poppins', category: 'Sans-serif' },
+    { value: 'Inter', label: 'Inter', category: 'Sans-serif' },
+    // Serif - Classic
+    { value: 'Merriweather', label: 'Merriweather', category: 'Serif' },
+    { value: 'Playfair Display', label: 'Playfair Display', category: 'Serif' },
+    { value: 'Lora', label: 'Lora', category: 'Serif' },
+    // Monospace - Code
+    { value: 'Roboto Mono', label: 'Roboto Mono', category: 'Monospace' },
+    { value: 'Source Code Pro', label: 'Source Code Pro', category: 'Monospace' },
+    { value: 'JetBrains Mono', label: 'JetBrains Mono', category: 'Monospace' },
   ];
 
   const themeOptions = [
@@ -127,7 +148,8 @@ function AppearanceSettings() {
         showToast(t('settings.saved'), 'success');
         if (setCtxTheme) setCtxTheme(theme);
         changeLanguage(currentLanguage);
-        document.body.style.fontFamily = fontName || fontType;
+        document.body.style.fontFamily = fontName || 'sans-serif';
+        document.body.style.fontWeight = fontType;
         document.body.style.fontSize = fontSize + 'px';
         // Reload page sau 1.5 giây để áp dụng ngôn ngữ
         setTimeout(() => window.location.reload(), 1500);
@@ -140,10 +162,10 @@ function AppearanceSettings() {
   return (
     <form className="space-y-6 max-w-lg mx-auto" onSubmit={handleSave}>
       <div>
-        <label className={"block text-sm font-normal mb-2 " + getThemeColor(theme, 'textSecondary')}>{t('settings.theme')}</label>
+        <label className={"block text-sm font-normal mb-2 " + getThemeColor(ctxTheme, 'textSecondary')}>{t('settings.theme')}</label>
         <div className="flex gap-4">
           {themeOptions.map(opt => (
-            <label key={opt.value} className={"inline-flex items-center gap-1 " + getThemeColor(theme, 'textSecondary')}>
+            <label key={opt.value} className={"inline-flex items-center gap-1 " + getThemeColor(ctxTheme, 'textSecondary')}>
               <input type="radio" name="theme" value={opt.value} checked={theme === opt.value} onChange={() => setTheme(opt.value)} />
               {opt.label}
             </label>
@@ -151,30 +173,47 @@ function AppearanceSettings() {
         </div>
       </div>
       <div>
-        <label className={"block text-sm font-normal mb-2 " + getThemeColor(theme, 'textSecondary')}>{t('settings.fontType')}</label>
-        <select className={"w-full px-3 py-2 rounded-md border text-sm " + getThemeColor(theme, 'input')} value={fontType} onChange={e => setFontType(e.target.value)}>
+        <label className={"block text-sm font-normal mb-2 " + getThemeColor(ctxTheme, 'textSecondary')}>{t('settings.fontType')}</label>
+        <select className={"w-full px-3 py-2 rounded-md border text-sm " + getThemeColor(ctxTheme, 'input') + ' ' + getThemeColor(ctxTheme, 'card')} value={fontType} onChange={e => setFontType(e.target.value)}>
           {fontTypeOptions.map(opt => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </select>
       </div>
       <div>
-        <label className={"block text-sm font-normal mb-2 " + getThemeColor(theme, 'textSecondary')}>{t('settings.fontName')} {t('settings.optional')}</label>
-        <input className={"w-full px-3 py-2 rounded-md border text-sm " + getThemeColor(theme, 'input')} value={fontName} onChange={e => setFontName(e.target.value)} placeholder={t('settings.fontNamePlaceholder')} />
+        <label className={"block text-sm font-normal mb-2 " + getThemeColor(ctxTheme, 'textSecondary')}>{t('settings.fontName')}</label>
+        <select className={"w-full px-3 py-2 rounded-md border text-sm " + getThemeColor(ctxTheme, 'input') + ' ' + getThemeColor(ctxTheme, 'card')} value={fontName} onChange={e => setFontName(e.target.value)}>
+          <option value="">Default (System)</option>
+          <optgroup label="Sans-serif">
+            {googleFonts.filter(f => f.category === 'Sans-serif').map(font => (
+              <option key={font.value} value={font.value}>{font.label}</option>
+            ))}
+          </optgroup>
+          <optgroup label="Serif">
+            {googleFonts.filter(f => f.category === 'Serif').map(font => (
+              <option key={font.value} value={font.value}>{font.label}</option>
+            ))}
+          </optgroup>
+          <optgroup label="Monospace">
+            {googleFonts.filter(f => f.category === 'Monospace').map(font => (
+              <option key={font.value} value={font.value}>{font.label}</option>
+            ))}
+          </optgroup>
+        </select>
       </div>
       <div>
-        <label className={"block text-sm font-normal mb-2 " + getThemeColor(theme, 'textSecondary')}>{t('settings.fontSize')}</label>
-        <input type="number" min="10" max="48" className={"w-32 px-3 py-2 rounded-md border text-sm " + getThemeColor(theme, 'input')} value={fontSize} onChange={e => setFontSize(e.target.value)} />
-        <span className={"ml-2 " + getThemeColor(theme, 'textSecondary')}>{t('settings.px')}</span>
+        <label className={"block text-sm font-normal mb-2 " + getThemeColor(ctxTheme, 'textSecondary')}>{t('settings.fontSize')}</label>
+        <input type="number" min="10" max="48" className={"w-32 px-3 py-2 rounded-md border text-sm " + getThemeColor(ctxTheme, 'input')} value={fontSize} onChange={e => setFontSize(e.target.value)} />
+        <span className={"ml-2 " + getThemeColor(ctxTheme, 'textSecondary')}>{t('settings.px')}</span>
       </div>
       <div>
-        <label className={"block text-sm font-normal mb-2 " + getThemeColor(theme, 'textSecondary')}>{t('settings.language')}</label>
-        <select className={"w-full px-3 py-2 rounded-md border text-sm " + getThemeColor(theme, 'input')} value={currentLanguage} onChange={e => setCurrentLanguage(e.target.value)}>
+        <label className={"block text-sm font-normal mb-2 " + getThemeColor(ctxTheme, 'textSecondary')}>{t('settings.language')}</label>
+        <select className={"w-full px-3 py-2 rounded-md border text-sm " + getThemeColor(ctxTheme, 'input') + ' ' + getThemeColor(ctxTheme, 'card')} value={currentLanguage} onChange={e => setCurrentLanguage(e.target.value)}>
           <option value="vi">Tiếng Việt</option>
           <option value="en">English</option>
         </select>
       </div>
-      <button type="submit" className={"w-full py-2 rounded-md font-semibold transition-colors " + getThemeColor(theme, 'button')}>{t('settings.save')}</button>
+      <button type="submit" className={"w-full py-2 rounded-md font-semibold transition-colors " + getThemeColor(ctxTheme, 'button')}>{t('settings.save')}</button>
     </form>
   );
 }

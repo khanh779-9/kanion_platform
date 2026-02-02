@@ -7,47 +7,7 @@ import { ThemeContext } from '@/components/ThemeContext.jsx';
 import { useTranslate } from '@/locales';
 import { getThemeColor } from '../themeColors';
 import { showToast } from '@/components/toastService.js';
-
-// TOTP implementation
-function generateTOTP(secret, epochSeconds = Math.floor(Date.now() / 1000)) {
-  if (!secret) return null;
-  try {
-    let timeCounter = Math.floor(epochSeconds / 60);
-    
-    // Convert base32 to bytes
-    const base32chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-    let bytes = [];
-    for (let i = 0; i < secret.length; i++) {
-      const idx = base32chars.indexOf(secret[i].toUpperCase());
-      if (idx === -1) return null;
-      bytes.push(...[(idx << 3) & 0xff, (idx >> 2) & 0xff]);
-    }
-    
-    // HMAC-SHA1
-    const crypto = window.crypto;
-    const key = new Uint8Array(bytes.filter((_, i) => i % 2 === 0)).slice(0, 20);
-    const counter = new Uint8Array(8);
-    let counterValue = timeCounter;
-    for (let i = 7; i >= 0; i--) {
-      counter[i] = counterValue & 0xff;
-      counterValue >>= 8;
-    }
-    
-    // Simplified: Use Web Crypto API for HMAC
-    return crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: 'SHA-1' }, false, ['sign'])
-      .then(k => crypto.subtle.sign('HMAC', k, counter))
-      .then(sig => {
-        const arr = new Uint8Array(sig);
-        const offset = arr[arr.length - 1] & 0xf;
-        const code = ((arr[offset] & 0x7f) << 24) | ((arr[offset + 1] & 0xff) << 16) | 
-                     ((arr[offset + 2] & 0xff) << 8) | (arr[offset + 3] & 0xff);
-        return (code % 1000000).toString().padStart(6, '0');
-      })
-      .catch(() => null);
-  } catch (e) {
-    return null;
-  }
-}
+import { generateTOTP } from '@/utils/totp.js';
 
 export default function Vault() {
   const { theme } = useContext(ThemeContext);
@@ -81,7 +41,7 @@ export default function Vault() {
 
   // OTP timer effect with TOTP generation
   useEffect(() => {
-    const currentRemaining = 60 - (Math.floor(Date.now() / 1000) % 60);
+    const currentRemaining = 30 - (Math.floor(Date.now() / 1000) % 30);
     // Generate TOTP codes for all items with otp_secret
     items.forEach(item => {
       if (item.otp_secret) {
@@ -97,7 +57,7 @@ export default function Vault() {
     });
     
     const interval = setInterval(() => {
-      const remaining = 60 - (Math.floor(Date.now() / 1000) % 60);
+      const remaining = 30 - (Math.floor(Date.now() / 1000) % 30);
       setOtpTimer(prev => {
         const updated = { ...prev };
         items.forEach(item => {
@@ -106,7 +66,7 @@ export default function Vault() {
         return updated;
       });
       
-      // Regenerate TOTP codes every 60 seconds
+      // Regenerate TOTP codes every 30 seconds
       items.forEach(item => {
         if (item.otp_secret) {
           generateTOTP(item.otp_secret).then(code => {
@@ -169,7 +129,7 @@ export default function Vault() {
       setShowDetailModal(true);
       setIsViewOnly(viewOnly);
       // Initialize OTP timer
-      setOtpTimer(prev => ({ ...prev, [id]: 60 - (Math.floor(Date.now() / 1000) % 60) }));
+      setOtpTimer(prev => ({ ...prev, [id]: 30 - (Math.floor(Date.now() / 1000) % 30) }));
     } catch (e) {
       showToast(e?.response?.data?.error || t('vault.failedToLoad'), 'error');
     }
@@ -534,7 +494,7 @@ export default function Vault() {
                             fill="none" 
                             className="stroke-green-500 transition-all"
                             strokeWidth="3"
-                              strokeDasharray={`${(otpTimer[item.id] || 0) / 60 * 226.2} 226.2`}
+                              strokeDasharray={`${(otpTimer[item.id] || 0) / 30 * 226.2} 226.2`}
                             strokeLinecap="round"
                           />
                         </svg>
@@ -642,7 +602,8 @@ export default function Vault() {
                         type={revealed[`otp-${editingId}`] ? 'text' : 'password'}
                         className={"flex-1 px-3 py-2 rounded-md border focus:outline-none focus:ring-2 transition-all font-mono text-sm " + getThemeColor(theme, 'input')}
                         value={editItem.otp_secret || ''}
-                        readOnly
+                        onChange={e => setEditItem({ ...editItem, otp_secret: e.target.value })}
+                        readOnly={isViewOnly}
                       />
                       <button
                         type="button"

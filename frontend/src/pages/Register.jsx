@@ -45,7 +45,7 @@ export default function Register({ onAuthed }) {
   const iconColor = getThemeColor(theme, 'accent');
   const inputClass = 'w-full px-4 py-2.5 text-sm rounded-lg border ' + getThemeColor(theme, 'input') + ' ' + getThemeColor(theme, 'border') + ' focus:outline-none focus:ring-2 ' + getThemeColor(theme, 'focusRing') + ' transition-all';
   const btnClass = 'w-full py-2.5 px-4 rounded-lg font-semibold text-sm shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ' + getThemeColor(theme, 'button');
-  const linkClass = 'font-semibold underline ' + getThemeColor(theme, 'accent');
+  const linkClass = getThemeColor(theme, 'accent');
   const cardBorder = getThemeColor(theme, 'border');
   return (
     <main className={mainClass}>
@@ -91,10 +91,11 @@ export default function Register({ onAuthed }) {
               </button>
             </form>
             <div className={"mt-6 pt-6 border-t text-center " + cardBorder}>
-              <p className={subheadingClass + " text-sm"}>Already have an account? <Link to="/login" className={linkClass}>Sign in</Link></p>
+              <p className={subheadingClass + " text-sm"}>Already have an account? <Link to="/login" className={linkClass + " font-normal"}>Sign in</Link></p>
             </div>
           </div>
         </div>
       </div>
     </main>
-  )};
+  );
+}

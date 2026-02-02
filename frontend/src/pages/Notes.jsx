@@ -17,7 +17,12 @@ export default function Notes() {
   const [color, setColor] = useState('#3b82f6'); // Default blue
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewingNote, setViewingNote] = useState(null);
   const [editingId, setEditingId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   async function load() {
     try {
@@ -79,6 +84,11 @@ export default function Notes() {
     setColor('#3b82f6');
     setEditingId(null);
     setShowModal(false);
+  }
+
+  function viewNote(note) {
+    setViewingNote(note);
+    setShowViewModal(true);
   }
 
   // Use themeColors.js for all theme-dependent color classes
@@ -200,73 +210,139 @@ export default function Notes() {
               <p className={`${getThemeColor(theme, 'textSecondary')} font-medium`}>{t('notes.loading')}</p>
             </div>
           </div>
-        ) : notes.length === 0 ? (
-          <div className={"text-center py-20 rounded-2xl border-2 border-dashed " + getThemeColor(theme, 'backgroundSecondary') + ' ' + getThemeColor(theme, 'border')}>
-            <FileText size={48} className={"mx-auto mb-4 " + getThemeColor(theme, 'textSecondary')} />
-            <p className={getThemeColor(theme, 'textSecondary') + " text-lg mb-6"}>{t('notes.noNotes')}</p>
-            <button
-              onClick={() => {
-                resetForm();
-                setShowModal(true);
-              }}
-              className={"inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold " + getThemeColor(theme, 'button')}
-            >
-              <Plus size={18} />
-              {t('notes.createFirst')}
-            </button>
-          </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {notes.map(n => (
+          <>
+            {/* Filters */}
+            <div className={`mb-6 grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-xl border ${borderClass} ${getThemeColor(theme, 'backgroundSecondary')}`}>
+              <input
+                className={"w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 transition-all text-sm " + getThemeColor(theme, 'input')}
+                placeholder={`${t('notes.searchByTitle')}...`}
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+              <input
+                type="date"
+                className={"w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 transition-all text-sm " + getThemeColor(theme, 'input')}
+                value={dateFrom}
+                onChange={e => setDateFrom(e.target.value)}
+              />
+              <input
+                type="date"
+                className={"w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 transition-all text-sm " + getThemeColor(theme, 'input')}
+                value={dateTo}
+                onChange={e => setDateTo(e.target.value)}
+              />
+            </div>
+
+            {/* Notes Grid */}
+            {notes.filter(n => {
+              const titleMatch = n.title?.toLowerCase().includes(searchQuery.trim().toLowerCase()) || 
+                                n.content?.toLowerCase().includes(searchQuery.trim().toLowerCase());
+              const dateMatch = (!dateFrom || new Date(n.updated_at) >= new Date(dateFrom)) && 
+                               (!dateTo || new Date(n.updated_at) <= new Date(dateTo));
+              return titleMatch && dateMatch;
+            }).length === 0 ? (
+              <div className={"text-center py-20 rounded-2xl border-2 border-dashed " + getThemeColor(theme, 'backgroundSecondary') + ' ' + getThemeColor(theme, 'border')}>
+                <FileText size={48} className={"mx-auto mb-4 " + getThemeColor(theme, 'textSecondary')} />
+                <p className={getThemeColor(theme, 'textSecondary') + " text-lg mb-6"}>{t('notes.noNotes')}</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {notes.filter(n => {
+                  const titleMatch = n.title?.toLowerCase().includes(searchQuery.trim().toLowerCase()) || 
+                                    n.content?.toLowerCase().includes(searchQuery.trim().toLowerCase());
+                  const dateMatch = (!dateFrom || new Date(n.updated_at) >= new Date(dateFrom)) && 
+                                   (!dateTo || new Date(n.updated_at) <= new Date(dateTo));
+                  return titleMatch && dateMatch;
+                }).map(n => (
               <article
                 key={n.id}
-                className={"rounded-xl shadow hover:shadow-lg transition-all overflow-hidden " + getThemeColor(theme, 'backgroundSecondary') + ' ' + getThemeColor(theme, 'border')}
+                onClick={() => viewNote(n)}
+                className={"rounded-xl shadow hover:shadow-lg transition-all overflow-hidden cursor-pointer group " + getThemeColor(theme, 'backgroundSecondary') + ' ' + getThemeColor(theme, 'border')}
               >
-                <div className="h-2" style={{ backgroundColor: n.color || '#3b82f6' }}></div>
-                <div className="p-4 sm:p-5">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: n.color || '#3b82f6', opacity: 0.15 }}>
-                      <FileText size={20} style={{ color: n.color || '#3b82f6' }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className={"text-base font-bold truncate " + getThemeColor(theme, 'cardTitle')}>{n.title || t('notes.untitled')}</h3>
-                      <p className={"text-xs mt-1 line-clamp-2 " + getThemeColor(theme, 'cardDesc')}>{n.content}</p>
-                    </div>
-                  </div>
-                  <div className={"flex items-center justify-between pt-3 border-t " + getThemeColor(theme, 'border')}>
-                    <p className={"text-xs " + getThemeColor(theme, 'textSecondary')}>{new Date(n.updated_at).toLocaleDateString()} {new Date(n.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                    <div className="flex gap-1">
+                <div className="h-1.5" style={{ backgroundColor: n.color || '#3b82f6' }}></div>
+                <div className="p-4">
+                  <h3 className={"text-sm font-bold truncate mb-2 " + getThemeColor(theme, 'cardTitle')}>{n.title || t('notes.untitled')}</h3>
+                  <p className={"text-xs line-clamp-3 mb-3 " + getThemeColor(theme, 'cardDesc')}>{n.content}</p>
+                  <div className={"flex items-center justify-between pt-3 border-t text-xs " + getThemeColor(theme, 'border')}>
+                    <span className={getThemeColor(theme, 'textSecondary')}>{new Date(n.updated_at).toLocaleDateString()}</span>
+                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
                       <button
                         onClick={() => editNote(n)}
-                        className={"p-1.5 rounded-lg transition-all hover:bg-opacity-10 " + getThemeColor(theme, 'textSecondary')}
-                        style={{ color: n.color || '#3b82f6' }}
+                        className={"p-1 rounded transition-all " + getThemeColor(theme, 'backgroundSecondary')}
                         title={t('notes.edit')}
                       >
-                        <Edit2 size={16} />
+                        <Edit2 size={14} style={{ color: n.color || '#3b82f6' }} />
                       </button>
                       <button
                         onClick={() => {
                           navigator.clipboard.writeText(n.content);
                           showToast(t('notes.copied'), 'success');
                         }}
-                        className={"p-1.5 rounded-lg transition-all hover:bg-opacity-10 " + getThemeColor(theme, 'textSecondary')}
-                        style={{ color: n.color || '#3b82f6' }}
-                        title={t('notes.share')}
+                        className={"p-1 rounded transition-all " + getThemeColor(theme, 'backgroundSecondary')}
+                        title={t('notes.copy')}
                       >
-                        <Share2 size={16} />
+                        <LinkIcon size={14} style={{ color: n.color || '#3b82f6' }} />
                       </button>
                       <button
                         onClick={() => deleteNote(n.id)}
-                        className="p-1.5 rounded-lg transition-all text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        className="p-1 rounded transition-all text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
                         title={t('notes.delete')}
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </div>
                 </div>
               </article>
             ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* View Modal - Read Only */}
+        {showViewModal && viewingNote && (
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={e => { if (e.target === e.currentTarget) setShowViewModal(false); }}
+          >
+            <div className={`${modalBg} rounded-2xl shadow-2xl max-w-2xl w-full p-6 border ${borderClass} max-h-[85vh] overflow-y-auto`}>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-1 h-7 rounded-full" style={{ backgroundColor: viewingNote.color || '#3b82f6' }}></div>
+                <h2 className={"text-xl font-bold " + getThemeColor(theme, 'cardTitle')}>{viewingNote.title || t('notes.untitled')}</h2>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className={"block text-xs font-medium mb-2 " + getThemeColor(theme, 'textSecondary')}>{t('notes.content')}</label>
+                  <div className={"p-4 rounded-lg whitespace-pre-wrap text-sm " + getThemeColor(theme, 'backgroundSecondary') + ' ' + getThemeColor(theme, 'text')}>
+                    {viewingNote.content}
+                  </div>
+                </div>
+                <div className={"text-xs pt-4 border-t " + getThemeColor(theme, 'border') + ' ' + getThemeColor(theme, 'textSecondary')}>
+                  {t('notes.updated')}: {new Date(viewingNote.updated_at).toLocaleString()}
+                </div>
+              </div>
+              <div className="flex gap-2 pt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowViewModal(false);
+                    editNote(viewingNote);
+                  }}
+                  className={"flex-1 py-2 rounded-lg font-semibold text-sm " + getThemeColor(theme, 'button')}
+                >
+                  {t('notes.edit')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowViewModal(false)}
+                  className={"flex-1 py-2 rounded-lg font-semibold text-sm " + getThemeColor(theme, 'backgroundSecondary') + ' ' + getThemeColor(theme, 'textSecondary')}
+                >
+                  {t('notes.close')}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

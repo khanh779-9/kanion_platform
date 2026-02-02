@@ -5,6 +5,7 @@ import { LogIn } from 'lucide-react';
 import { ThemeContext } from '@/components/ThemeContext.jsx';
 import { getThemeColor } from '../themeColors';
 import { showToast } from '@/components/toastService.js';
+import { useTranslate } from '@/locales';
 
 export default function Login({ onAuthed }) {
   const { theme } = useContext(ThemeContext);
@@ -22,7 +23,7 @@ export default function Login({ onAuthed }) {
   const iconColor = getThemeColor(theme, 'accent');
   const inputClass = 'w-full px-4 py-2.5 text-sm rounded-lg border ' + getThemeColor(theme, 'input') + ' ' + getThemeColor(theme, 'border') + ' focus:outline-none focus:ring-2 ' + getThemeColor(theme, 'focusRing') + ' transition-all';
   const btnClass = 'w-full py-2.5 px-4 rounded-lg font-semibold text-sm shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ' + getThemeColor(theme, 'button');
-  const linkClass = 'font-semibold underline ' + getThemeColor(theme, 'accent');
+  const linkClass = getThemeColor(theme, 'accent');
   const cardBorder = getThemeColor(theme, 'border');
 
   async function submit(e) {
@@ -89,7 +90,7 @@ export default function Login({ onAuthed }) {
               </button>
             </form>
             <div className={"mt-8 pt-8 border-t " + cardBorder}>
-              <p className={"text-center " + subheadingClass}>Don't have an account? <Link to="/register" className={linkClass}>Create one</Link></p>
+              <p className={"text-center " + subheadingClass}>Don't have an account? <Link to="/register" className={linkClass + " font-normal"}>Create one</Link></p>
             </div>
           </div>
         </div>

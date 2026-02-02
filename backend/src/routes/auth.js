@@ -89,7 +89,7 @@ router.post("/login", async (req, res) => {
   const { email, password } = parse.data;
   try {
     const result = await db.query(
-      "SELECT id,email,password,status FROM account.users WHERE email=$1",
+      "SELECT u.id,u.email,u.password,u.status FROM account.users u WHERE u.email=$1",
       [email.toLowerCase()],
     );
 
@@ -141,7 +141,7 @@ router.post("/login", async (req, res) => {
       req,
     ).catch((err) => console.error("Audit log error:", err));
 
-    // Notification: đăng nhập thành công
+    
     try {
       const { parseUserAgent } = await import("../utils/userAgent.js");
       const ua = req.headers["user-agent"] || "";
@@ -150,11 +150,11 @@ router.post("/login", async (req, res) => {
         req.socket?.remoteAddress ||
         "";
       const { browser, os, device } = parseUserAgent(ua);
-      const content = `Trình duyệt: ${browser}\nThiết bị: ${device}\nHệ điều hành: ${os}\nIP: ${ip}`;
+      const content = `browser: ${browser}\ndevice: ${device}\nos: ${os}\nip: ${ip}`;
       await db.query(
         `INSERT INTO notification.items (account_id, type, title, content, created_at)
-         VALUES ($1, 'info', 'Đăng nhập tài khoản', $2, now())`,
-        [user.id, content],
+         VALUES ($1, $2, $3, $4, now())`,
+        [user.id, 'security', 'login', content],
       );
     } catch (e) {
       console.error("Notification error:", e.message);

@@ -11,8 +11,7 @@ const translations = {
 
 export function LanguageProvider({ children }) {
   const [language, setLanguage] = useState(() => {
-    
-    return localStorage.getItem('language') || 'vi';
+    return localStorage.getItem('language') || 'en';
   });
 
   const changeLanguage = (lang) => {

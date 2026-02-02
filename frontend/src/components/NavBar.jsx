@@ -29,6 +29,32 @@ export default function NavBar({ user, onLogout }) {
   const [filterType, setFilterType] = useState('all');
   const locale = language === 'vi' ? 'vi-VN' : 'en-US';
 
+  // Parse notification content from raw data
+  const parseNotificationContent = (title, content) => {
+    if (title !== 'login') return content;
+    
+    const lines = content.split('\n');
+    const parsed = {};
+    
+    lines.forEach(line => {
+      const [key, value] = line.split(':').map(s => s.trim());
+      if (key && value) parsed[key] = value;
+    });
+    
+    return [
+      `${t('navbar.notif_browser')}: ${parsed.browser || '—'}`,
+      `${t('navbar.notif_device')}: ${parsed.device || '—'}`,
+      `${t('navbar.notif_os')}: ${parsed.os || '—'}`,
+      `${t('navbar.notif_ip')}: ${parsed.ip || '—'}`
+    ].join('\n');
+  };
+
+  // Translate notification title
+  const getNotificationTitle = (title) => {
+    if (title === 'login') return t('navbar.notif_login_title');
+    return title;
+  };
+
   useEffect(() => {
     function handleClickOutside(e) {
       if (menuOpen && menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
@@ -233,11 +259,11 @@ export default function NavBar({ user, onLogout }) {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className={`font-semibold text-sm ${getThemeColor(theme, 'cardTitle')}`}>
-                                    {n.title}
+                                    {getNotificationTitle(n.title)}
                                   </div>
                                   {n.content && (
                                     <div className={`text-xs mt-1 whitespace-pre-line line-clamp-2 ${getThemeColor(theme, 'cardDesc')}`}>
-                                      {n.content}
+                                      {parseNotificationContent(n.title, n.content)}
                                     </div>
                                   )}
                                   <div className={`text-[11px] mt-1.5 ${getThemeColor(theme, 'textSecondary')}`}>
@@ -472,11 +498,11 @@ export default function NavBar({ user, onLogout }) {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className={`font-semibold text-sm ${getThemeColor(theme, 'cardTitle')}`}>
-                                    {n.title}
+                                    {getNotificationTitle(n.title)}
                                   </div>
                                   {n.content && (
-                                    <div className={`text-sm mt-1.5 whitespace-pre-line line-clamp-3 ${getThemeColor(theme, 'cardDesc')}`}>
-                                      {n.content}
+                                    <div className={`text-sm mt-1.5 whitespace-pre-line ${getThemeColor(theme, 'cardDesc')}`}>
+                                      {parseNotificationContent(n.title, n.content)}
                                     </div>
                                   )}
                                   <div className={`text-sm font-semibold mt-2.5 px-3 py-1.5 rounded-lg inline-block ${getThemeColor(theme, 'accent')} ${getThemeColor(theme, 'accentText')}`}>

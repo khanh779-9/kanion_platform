@@ -25,7 +25,12 @@
     "settings": "Settings",
     "logout": "Logout",
     "login": "Login",
-    "register": "Register"
+    "register": "Register",
+    "notif_login_title": "Account Login",
+    "notif_browser": "Browser",
+    "notif_device": "Device",
+    "notif_os": "Operating System",
+    "notif_ip": "IP"
   },
   "home": {
     "tagline": "Secure Your Life",
@@ -118,7 +123,10 @@
     "share": "Share",
     "copy": "Copy",
     "copied": "Copied!",
-    "edit": "Edit"
+    "edit": "Edit",
+    "close": "Close",
+    "updated": "Updated",
+    "searchByTitle": "Search by title or content"
   },
   "vault": {
     "personalVault": "Personal Vault",
