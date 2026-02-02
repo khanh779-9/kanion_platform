@@ -23,7 +23,6 @@
 - [Usage](#usage)
 - [Contributing](#contributing)
 - [License](#license)
-- [Author](#author)
 
 ---
 
@@ -38,20 +37,21 @@ Kanion Secure Space is a full-stack web platform for managing accounts, password
 - 🔒 **AES-256-GCM encryption** for all sensitive data
 - 🔑 **Bcrypt password hashing** with 12 salt rounds
 - 🚫 **Rate limiting** to prevent brute force attacks
-- 📝 **Complete audit trail** of all sensitive actions
+- 📝 **Complete audit trail** of sensitive actions
 - 🪪 **JWT authentication** with 7-day expiration
-- 🌗 **Responsive design with dark mode**
+- 🌗 **Responsive UI with dark mode**
+- 🌍 **Multi-language UI** (Vietnamese / English)
+- 🎨 **Custom note colors** with quick palette
+- 🔗 **Quick share action** (copy note content)
 - 💡 **Open source and fully transparent**
 
 ---
 
 ## Project Structure
 
-- **backend/**: Node.js REST API server, authentication, notes, user, and vault logic, database scripts, and utilities.
-- **frontend/**: React + Vite + Tailwind CSS app, UI components, pages, and API client.
+- **Backend/**: Node.js REST API server, authentication, notes, user, and vault logic, database scripts, and utilities.
+- **Frontend/**: React + Vite + Tailwind CSS app, UI components, pages, i18n, and API client.
 - **db_template/**: SQL template for initializing the database.
-
----
 
 ---
 
@@ -91,13 +91,12 @@ npm run dev
 
 ---
 
----
-
 ## Usage
 
 1. Open your browser and go to: [http://localhost:5173](http://localhost:5173)
 2. The backend API runs at [http://localhost:3000](http://localhost:3000) (or as configured).
 3. Register a new user, log in, and start managing your notes and vault items.
+4. Use Settings → Appearance to change language and theme.
 
 <!--
 ## Screenshots
@@ -118,4 +117,4 @@ For major changes, open an issue first to discuss what you would like to change.
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-*Last updated: January 29, 2026*
+*Last updated: February 2, 2026*
