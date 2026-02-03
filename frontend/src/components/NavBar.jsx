@@ -1,12 +1,41 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Lock, Bell, ChevronDown, LogOut, User, Settings, AlertCircle, CheckCircle, Info, Eye, EyeOff, X, Sun, Moon, Laptop } from 'lucide-react';
+import { Menu, X, Bell, User, Settings, LogOut, Sun, Moon, Shield, FileText, Lock, ShieldAlert, Wallet, ChevronDown, AlertCircle, CheckCircle, Info, Eye, EyeOff, Laptop } from 'lucide-react';
 import { useContext } from 'react';
 import { ThemeContext } from '@/components/ThemeContext.jsx';
 import { useTranslate } from '@/locales';
 import { getThemeColor } from '../themeColors';
 import { fetchLatestNotifications, fetchAllNotifications, markNotificationAsRead } from '@/api/notifications.js';
 import { api } from '@/api/client';
+
+const NavItem = ({ to, icon, text, active, theme }) => (
+  <Link 
+    to={to} 
+    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+      active 
+        ? `${getThemeColor(theme, 'accent')} ${getThemeColor(theme, 'accentText')} shadow-md` 
+        : `${getThemeColor(theme, 'textSecondary')} hover:${getThemeColor(theme, 'backgroundSecondary')} hover:${getThemeColor(theme, 'text')}`
+    }`}
+  >
+    {icon}
+    <span>{text}</span>
+  </Link>
+);
+
+const MobileNavItem = ({ to, icon, text, active, onClick, theme }) => (
+  <Link
+    to={to}
+    onClick={onClick}
+    className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+      active
+        ? `${getThemeColor(theme, 'accent')} ${getThemeColor(theme, 'accentText')}`
+        : `${getThemeColor(theme, 'textSecondary')} hover:${getThemeColor(theme, 'backgroundSecondary')}`
+    }`}
+  >
+    {icon}
+    <span>{text}</span>
+  </Link>
+);
 
 export default function NavBar({ user, onLogout }) {
   const { theme, setTheme } = useContext(ThemeContext);
@@ -141,6 +170,10 @@ export default function NavBar({ user, onLogout }) {
         {/* Navigation */}
         {user ? (
           <nav className="flex items-center gap-2 sm:gap-4">
+            <div className="hidden md:flex items-center space-x-1">
+              {/* Navigation items moved to Home page cards */}
+            </div>
+
             {/* Theme Menu */}
             <div className="relative" ref={themeMenuRef}>
               <button
@@ -355,6 +388,10 @@ export default function NavBar({ user, onLogout }) {
                     <LogOut size={15} className={getThemeColor(theme, 'icon')} />
                     {t('navbar.logout')}
                   </button>
+                  
+                  <div className="md:hidden pt-2 mt-2 border-t border-gray-100 dark:border-gray-800">
+                    {/* Mobile nav items moved to Home page cards */}
+                  </div>
                 </div>
               )}
             </div>

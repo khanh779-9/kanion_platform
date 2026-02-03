@@ -13,6 +13,8 @@ import Vault from '@/pages/Vault.jsx';
 import Notes from '@/pages/Notes.jsx';
 import Profile from '@/pages/Profile.jsx';
 import Settings from '@/pages/Settings.jsx';
+import BreachMonitor from '@/pages/BreachMonitor.jsx';
+import Wallet from '@/pages/Wallet.jsx';
 import { initAuth, setAuthToken } from '@/api/client.js';
 import { getThemeColor } from './themeColors';
 
@@ -100,6 +102,8 @@ export default function App() {
             <Route path="/notes" element={<PrivateRoute authed={!!user}><Notes /></PrivateRoute>} />
             <Route path="/profile" element={<PrivateRoute authed={!!user}><Profile /></PrivateRoute>} />
             <Route path="/settings" element={<PrivateRoute authed={!!user}><Settings /></PrivateRoute>} />
+            <Route path="/breach" element={<PrivateRoute authed={!!user}><BreachMonitor /></PrivateRoute>} />
+            <Route path="/wallet" element={<PrivateRoute authed={!!user}><Wallet /></PrivateRoute>} />
           </Routes>
         </div>
       </ToastContext.Provider>

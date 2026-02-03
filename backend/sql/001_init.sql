@@ -139,8 +139,9 @@ CREATE TABLE IF NOT EXISTS vault.items (
   id SERIAL PRIMARY KEY,
   account_id BIGINT NOT NULL REFERENCES account.users(id) ON DELETE CASCADE,
   type TEXT NOT NULL DEFAULT 'other',
-  name VARCHAR(150) NOT NULL,
-  email VARCHAR(255),
+  name TEXT NOT NULL,
+  username TEXT,
+  email TEXT,
   password TEXT,
   otp_secret TEXT,
   description TEXT,
@@ -190,4 +191,53 @@ CREATE TABLE IF NOT EXISTS notification.items (
   read_at TIMESTAMPTZ DEFAULT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT items_account_id_fkey FOREIGN KEY (account_id) REFERENCES account.users(id) ON UPDATE NO ACTION ON DELETE CASCADE
+);
+
+-- Breach Monitor Schema
+CREATE SCHEMA IF NOT EXISTS breach;
+
+CREATE TABLE IF NOT EXISTS breach.monitor (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL,
+  monitor_type TEXT NOT NULL,
+  monitor_value TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'active',
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  CONSTRAINT fk_breach_monitor_user FOREIGN KEY (user_id) REFERENCES account.users(id) ON UPDATE NO ACTION ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS breach.result (
+  id SERIAL PRIMARY KEY,
+  monitor_id INT NOT NULL,
+  breached BOOLEAN NOT NULL,
+  breach_source TEXT DEFAULT NULL,
+  breach_date TIMESTAMPTZ DEFAULT NULL,
+  raw_data JSONB DEFAULT NULL,
+  checked_at TIMESTAMPTZ DEFAULT now(),
+  CONSTRAINT fk_breach_result_monitor FOREIGN KEY (monitor_id) REFERENCES breach.monitor(id) ON UPDATE NO ACTION ON DELETE CASCADE
+);
+
+-- Wallet Schema
+CREATE SCHEMA IF NOT EXISTS wallet;
+
+CREATE TABLE IF NOT EXISTS wallet.items (
+  id SERIAL PRIMARY KEY,
+  account_id BIGINT NOT NULL,
+  wallet_type TEXT NOT NULL,
+  name TEXT NOT NULL,
+  address TEXT DEFAULT NULL,
+  encrypted_secret BYTEA NOT NULL,
+  description TEXT DEFAULT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT items_account_id_fkey FOREIGN KEY (account_id) REFERENCES account.users(id) ON UPDATE NO ACTION ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS wallet.metadata (
+  id SERIAL PRIMARY KEY,
+  wallet_id INT NOT NULL,
+  key TEXT NOT NULL,
+  value TEXT NOT NULL,
+  CONSTRAINT metadata_wallet_id_fkey FOREIGN KEY (wallet_id) REFERENCES wallet.items(id) ON UPDATE NO ACTION ON DELETE CASCADE
 );

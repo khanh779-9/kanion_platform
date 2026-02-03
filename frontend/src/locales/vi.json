@@ -56,7 +56,9 @@
     "signingIn": "Đang đăng nhập...",
     "noAccount": "Không có tài khoản?",
     "createOne": "Tạo một",
-    "loginFailed": "Đăng nhập không thành công"
+    "loginFailed": "Đăng nhập không thành công",
+    "username": "Tên đăng nhập",
+    "usernamePlaceholder": "Tên đăng nhập"
   },
   "register": {
     "createAccount": "Tạo Tài Khoản",
@@ -140,6 +142,8 @@
     "addCardModal": "Thêm Thẻ",
     "name": "Tên",
     "namePlaceholder": "VD: Gmail, Facebook, AWS",
+    "username": "Tên đăng nhập",
+    "usernamePlaceholder": "Tên đăng nhập",
     "nameRequired": "Tên bắt buộc",
     "email": "Email",
     "password": "Mật Khẩu",
@@ -182,7 +186,8 @@
     "updatedSuccess": "Cập nhật thành công",
     "otpCode": "Mã OTP",
     "totpCode": "Mã TOTP",
-    "codeRefresh": "Làm mới sau"
+    "codeRefresh": "Làm mới sau",
+    "noResults": "Không có kết quả"
   },
   "settings": {
     "settings": "Cài Đặt",
@@ -269,5 +274,49 @@
     "success": "Thành công",
     "required": "Bắt buộc",
     "optional": "Tùy chọn"
+  },
+  "breach": {
+    "title": "Giám Sát Rò Rỉ",
+    "desc": "Kiểm tra xem email hoặc tài khoản của bạn có bị lộ trong các vụ rò rỉ dữ liệu hay không.",
+    "check": "Kiểm Tra Ngay",
+    "monitor": "Giám Sát",
+    "addMonitor": "Thêm Giám Sát",
+    "monitoring": "Đang theo dõi",
+    "safe": "An toàn! Không tìm thấy dữ liệu bị rò rỉ.",
+    "breached": "Phát hiện rò rỉ!",
+    "breachFoundFor": "Tìm thấy dữ liệu rò rỉ cho",
+    "source": "Nguồn",
+    "date": "Ngày",
+    "status": "Trạng thái",
+    "active": "Hoạt động",
+    "paused": "Tạm dừng",
+    "deleted": "Đã xóa",
+    "enterValue": "Nhập email, SĐT, địa chỉ ví, hoặc mật khẩu...",
+    "noMonitors": "Chưa có giám sát nào. Hãy thêm mới.",
+    "recentBreaches": "Kiểm tra gần đây"
+  },
+  "wallet": {
+    "title": "Ví Giấy Tờ",
+    "desc": "Lưu trữ an toàn thẻ tín dụng, giấy tờ tùy thân và ví tiền điện tử.",
+    "add": "Thêm Mục",
+    "card": "Thẻ Tín Dụng",
+    "idCard": "CCCD / Hộ Chiếu",
+    "crypto": "Ví Tiền Ảo",
+    "bank": "Tài Khoản NH",
+    "other": "Khác",
+    "cardNumber": "Số Thẻ",
+    "expiry": "Hết Hạn",
+    "cvv": "CVV",
+    "holder": "Chủ Thẻ",
+    "idNumber": "Số Giấy Tờ",
+    "issueDate": "Ngày Cấp",
+    "address": "Địa Chỉ / Public Key",
+    "secret": "Private Key / Seed Phrase",
+    "secretPlaceholder": "Nhập khóa bí mật hoặc số đầy đủ...",
+    "copy": "Sao Chép",
+    "view": "Xem Chi Tiết",
+    "hide": "Ẩn Chi Tiết",
+    "noItems": "Ví của bạn đang trống.",
+    "noResults": "Không có kết quả"
   }
 }

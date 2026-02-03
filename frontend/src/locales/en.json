@@ -56,7 +56,9 @@
     "signingIn": "Signing in...",
     "noAccount": "Don't have an account?",
     "createOne": "Create one",
-    "loginFailed": "Login failed"
+    "loginFailed": "Login failed",
+    "username": "User name",
+    "usernamePlaceholder": "User name"
   },
   "register": {
     "createAccount": "Create Account",
@@ -141,6 +143,8 @@
     "name": "Name",
     "namePlaceholder": "e.g., Gmail, Facebook, AWS",
     "nameRequired": "Name is required",
+    "username": "Username",
+    "usernamePlaceholder": "Username",
     "email": "Email",
     "password": "Password",
     "otpSecret": "OTP Secret",
@@ -182,7 +186,8 @@
     "updatedSuccess": "Updated successfully",
     "otpCode": "OTP Code",
     "totpCode": "TOTP Code",
-    "codeRefresh": "Refreshes in"
+    "codeRefresh": "Refreshes in",
+    "noResults": "No results found"
   },
   "settings": {
     "settings": "Settings",
@@ -269,5 +274,49 @@
     "success": "Success",
     "required": "Required",
     "optional": "Optional"
+  },
+  "breach": {
+    "title": "Breach Monitor",
+    "desc": "Check if your email or accounts have been compromised in data breaches.",
+    "check": "Check Now",
+    "monitor": "Monitor",
+    "addMonitor": "Add to Monitor",
+    "monitoring": "Monitoring",
+    "safe": "No breaches found. You are safe!",
+    "breached": "Breaches Found!",
+    "breachFoundFor": "Breach found for",
+    "source": "Source",
+    "date": "Date",
+    "status": "Status",
+    "active": "Active",
+    "paused": "Paused",
+    "deleted": "Deleted",
+    "enterValue": "Enter email, phone, wallet address, or password...",
+    "noMonitors": "No monitors active. Add one to get started.",
+    "recentBreaches": "Recent Checks"
+  },
+  "wallet": {
+    "title": "Identity Wallet",
+    "desc": "Securely store your credit cards, IDs, and crypto wallets.",
+    "add": "Add Item",
+    "card": "Credit Card",
+    "idCard": "ID / Passport",
+    "crypto": "Crypto Wallet",
+    "bank": "Bank Account",
+    "other": "Other",
+    "cardNumber": "Card Number",
+    "expiry": "Expiry Date",
+    "cvv": "CVV",
+    "holder": "Card Holder",
+    "idNumber": "ID Number",
+    "issueDate": "Issue Date",
+    "address": "Address / Public Key",
+    "secret": "Private Key / Seed Phrase",
+    "secretPlaceholder": "Enter secret key or full number...",
+    "copy": "Copy",
+    "view": "View Details",
+    "hide": "Hide Details",
+    "noItems": "No items in your wallet.",
+    "noResults": "No results found"
   }
 }

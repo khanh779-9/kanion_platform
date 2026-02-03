@@ -9,6 +9,7 @@ const router = Router();
 const upsertSchema = z.object({
   type: z.enum(['website', 'email', 'server', 'database', 'application', 'other']).optional().default('other'),
   name: z.string().min(1, 'Name required').max(150),
+  username: z.string().max(150).optional().nullable(),
   email: z.string().max(255).optional().nullable().refine(
     v => !v || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v),
     { message: 'Invalid email' }
@@ -18,10 +19,24 @@ const upsertSchema = z.object({
   description: z.string().max(1000).optional().nullable()
 });
 
+// Helper to safely decrypt fields (handles legacy plaintext data)
+function tryDecrypt(value) {
+  if (!value) return value;
+  try {
+    // If it looks like our encrypted format (iv:tag:data), try to decrypt
+    if (value.includes(':') && value.split(':').length === 3) {
+       return decryptSensitive(value);
+    }
+    return value; // Return as-is if not encrypted
+  } catch (e) {
+    return value; // Fallback to original on error
+  }
+}
+
 router.get('/items', requireAuth, async (req, res) => {
   try {
     const { rows } = await query(
-      `SELECT id,type,name,email,otp_secret,description,created_at,updated_at
+      `SELECT id,type,name,username,email,otp_secret,description,created_at,updated_at
        FROM vault.items 
        WHERE account_id=$1 
        ORDER BY updated_at DESC`,
@@ -30,6 +45,12 @@ router.get('/items', requireAuth, async (req, res) => {
 
     const items = rows.map(item => ({
       ...item,
+      ...item,
+      // type is plaintext
+      name: tryDecrypt(item.name),
+      username: tryDecrypt(item.username),
+      email: tryDecrypt(item.email),
+      description: tryDecrypt(item.description),
       otp_secret: item.otp_secret ? decryptSensitive(item.otp_secret) : null
     }));
 
@@ -53,7 +74,15 @@ router.get('/items/:id', requireAuth, async (req, res) => {
     if (rows.length === 0) return res.status(404).json({ error: 'Not found' });
     
     const item = rows[0];
+    
     // Decrypt sensitive fields
+    // Decrypt sensitive fields
+    // item.type is plaintext (Enum)
+    item.name = tryDecrypt(item.name);
+    item.username = tryDecrypt(item.username);
+    item.email = tryDecrypt(item.email);
+    item.description = tryDecrypt(item.description);
+
     if (item.password) item.password = decryptSensitive(item.password);
     if (item.otp_secret) item.otp_secret = decryptSensitive(item.otp_secret);
     
@@ -68,23 +97,36 @@ router.post('/items', requireAuth, async (req, res) => {
   const parse = upsertSchema.safeParse(req.body);
   if (!parse.success) return res.status(400).json({ error: parse.error.flatten() });
   
-  const { type, name, email, password, otp_secret, description } = parse.data;
+  const { type, name, username, email, password, otp_secret, description } = parse.data;
   
   try {
     // Encrypt sensitive fields
+    const encryptedType = type || 'other'; // Keep type as plaintext for DB Enum compatibility
+    const encryptedName = encryptSensitive(name);
+    const encryptedUsername = username ? encryptSensitive(username) : null;
+    const encryptedEmail = email ? encryptSensitive(email) : null;
     const encryptedPassword = password ? encryptSensitive(password) : null;
     const encryptedOtp = otp_secret ? encryptSensitive(otp_secret) : null;
+    const encryptedDescription = description ? encryptSensitive(description) : null;
     
     const { rows } = await query(
       `INSERT INTO vault.items
-       (account_id,type,name,email,password,otp_secret,description)
-       VALUES($1,$2,$3,$4,$5,$6,$7)
-       RETURNING id,type,name,email,description,created_at,updated_at`,
-      [req.user.id, type || 'other', name, email ?? null, 
-       encryptedPassword ?? null, encryptedOtp ?? null, description ?? null]
+       (account_id,type,name,username,email,password,otp_secret,description)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8)
+       RETURNING id,created_at,updated_at`,
+      [req.user.id, encryptedType, encryptedName, encryptedUsername, encryptedEmail, 
+       encryptedPassword, encryptedOtp, encryptedDescription]
     );
     
-    res.status(201).json(rows[0]);
+    // Return plaintext to client
+    const newItem = rows[0];
+    newItem.type = type || 'other';
+    newItem.name = name;
+    newItem.username = username;
+    newItem.email = email;
+    newItem.description = description;
+    
+    res.status(201).json(newItem);
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Failed to create item' });
@@ -103,7 +145,12 @@ router.put('/items/:id', requireAuth, async (req, res) => {
   if (keys.length === 0) return res.status(400).json({ error: 'No fields to update' });
   
   try {
-    // Encrypt sensitive fields
+    // Encrypt fields before updating
+    // Note: 'type' is NOT encrypted because the DB uses an ENUM type (vault.vault_type)
+    if (fields.name) fields.name = encryptSensitive(fields.name);
+    if (fields.username) fields.username = encryptSensitive(fields.username);
+    if (fields.email) fields.email = encryptSensitive(fields.email);
+    if (fields.description) fields.description = encryptSensitive(fields.description);
     if (fields.password) fields.password = encryptSensitive(fields.password);
     if (fields.otp_secret) fields.otp_secret = encryptSensitive(fields.otp_secret);
     
@@ -114,13 +161,13 @@ router.put('/items/:id', requireAuth, async (req, res) => {
       `UPDATE vault.items 
        SET ${setSql}, updated_at=now() 
        WHERE account_id=$1 AND id=$2 
-       RETURNING id,type,name,email,description,created_at,updated_at`,
+       RETURNING id,created_at,updated_at`,
       params
     );
     
     if (rowCount === 0) return res.status(404).json({ error: 'Not found' });
     
-    res.json(rows[0]);
+    res.json({ success: true });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Failed to update item' });

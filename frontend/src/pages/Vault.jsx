@@ -13,7 +13,7 @@ export default function Vault() {
   const { theme } = useContext(ThemeContext);
   const { t } = useTranslate();
   const [items, setItems] = useState([]);
-  const [form, setForm] = useState({ name: '', email: '', password: '', otp_secret: '', description: '', type: 'other' });
+  const [form, setForm] = useState({ name: '', username: '', email: '', password: '', otp_secret: '', description: '', type: 'other' });
   const [addType, setAddType] = useState(null); // 'login' | 'identity' | 'card'
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -102,7 +102,7 @@ export default function Vault() {
     try {
       await api.post('/vault/items', form);
       showToast(t('vault.addedSuccess'), 'success');
-      setForm({ name: '', email: '', password: '', otp_secret: '', description: '', type: 'other' });
+      setForm({ name: '', username: '', email: '', password: '', otp_secret: '', description: '', type: 'other' });
       setShowModal(false);
       setAddType(null);
       load();
@@ -202,8 +202,8 @@ export default function Vault() {
         {/* Header */}
         <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-4">
-            <div className={`p-3 rounded-xl shadow-lg ${iconBgClass}`}>
-              <Lock size={32} className={getThemeColor(theme, 'accentText')} />
+            <div className={`p-3 rounded-xl shadow-lg ${getThemeColor(theme, 'featureVaultIcon')}`}>
+              <Lock size={32} className="text-current" />
             </div>
             <div>
               <h1 className={`text-4xl font-bold ${headingClass}`}>{t('vault.personalVault')}</h1>
@@ -314,6 +314,15 @@ export default function Vault() {
                 {(addType === 'login' || addType === 'identity') && (
                   <div className="grid grid-cols-2 gap-4">
                     <div>
+                      <label className={"block text-xs font-medium mb-1 " + getThemeColor(theme, 'textSecondary')}>{t('login.username')}</label>
+                      <input
+                        className={"w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 transition-all text-sm " + getThemeColor(theme, 'input')}
+                        placeholder={t('login.usernamePlaceholder')}
+                        value={form.username}
+                        onChange={e => setForm({ ...form, username: e.target.value })}
+                      />
+                    </div>
+                    <div>
                       <label className={"block text-xs font-medium mb-1 " + getThemeColor(theme, 'textSecondary')}>{t('vault.email')}</label>
                       <input
                         className={"w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 transition-all text-sm " + getThemeColor(theme, 'input')}
@@ -379,7 +388,7 @@ export default function Vault() {
                   <button
                     type="button"
                     onClick={() => { setShowModal(false); setAddType(null); }}
-                    className={"flex-1 py-2 px-3 rounded-md font-semibold text-sm " + getThemeColor(theme, 'backgroundSecondary') + ' ' + getThemeColor(theme, 'textSecondary')}
+                    className={"flex-1 py-2 px-3 rounded-md font-semibold text-sm transition-colors " + getThemeColor(theme, 'buttonSecondary')}
                   >
                     {t('notes.cancel')}
                   </button>
@@ -415,7 +424,7 @@ export default function Vault() {
           </div>
         ) : filteredItems.length === 0 ? (
           <div className={"text-center py-16 rounded-2xl border-2 border-dashed " + getThemeColor(theme, 'backgroundSecondary') + ' ' + getThemeColor(theme, 'border')}>
-            <p className={getThemeColor(theme, 'textSecondary') + " text-sm"}>Không có kết quả phù hợp</p>
+            <p className={getThemeColor(theme, 'textSecondary') + " text-sm"}>{t('vault.noResults')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -557,14 +566,23 @@ export default function Vault() {
                 />
               </div>
               <div>
-                <label className={`block text-xs font-medium ${subheadingClass} mb-1`}>{t('vault.email')}</label>
-                <input
-                  className={"w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 transition-all text-sm " + getThemeColor(theme, 'input')}
-                  placeholder={t('login.emailPlaceholder')}
-                  value={editItem.email || ''}
-                  onChange={e => setEditItem({ ...editItem, email: e.target.value })}
-                  readOnly={isViewOnly}
-                />
+                <label className={`block text-xs font-medium ${subheadingClass} mb-1`}>{t('vault.account')}</label>
+                <div className="grid grid-cols-2 gap-4">
+                   <input
+                    className={"w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 transition-all text-sm " + getThemeColor(theme, 'input')}
+                    placeholder={t('login.usernamePlaceholder')}
+                    value={editItem.username || ''}
+                    onChange={e => setEditItem({ ...editItem, username: e.target.value })}
+                    readOnly={isViewOnly}
+                  />
+                  <input
+                    className={"w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 transition-all text-sm " + getThemeColor(theme, 'input')}
+                    placeholder={t('login.emailPlaceholder')}
+                    value={editItem.email || ''}
+                    onChange={e => setEditItem({ ...editItem, email: e.target.value })}
+                    readOnly={isViewOnly}
+                  />
+                </div>
               </div>
               <div>
                 <label className={`block text-xs font-medium ${subheadingClass} mb-1`}>{t('vault.password')}</label>
@@ -646,7 +664,7 @@ export default function Vault() {
                 <button
                   type="button"
                   onClick={() => { setShowDetailModal(false); setEditItem(null); setEditingId(null); setIsViewOnly(false); }}
-                  className={"flex-1 py-2 px-3 rounded-md font-semibold text-sm " + getThemeColor(theme, 'backgroundSecondary') + ' ' + getThemeColor(theme, 'textSecondary')}
+                  className={"flex-1 py-2 px-3 rounded-md font-semibold text-sm transition-colors " + getThemeColor(theme, 'buttonSecondary')}
                 >
                   {t('notes.cancel')}
                 </button>

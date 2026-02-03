@@ -1,15 +1,19 @@
 import { Link } from 'react-router-dom';
-import { Lock, FileText, ArrowRight } from 'lucide-react';
+import { Lock, FileText, ArrowRight, ShieldAlert, Wallet } from 'lucide-react';
 
 import { useContext } from 'react';
 import { ThemeContext } from '@/components/ThemeContext.jsx';
+import { useTranslate } from '@/locales';
 import { themeColors, getThemeColor } from '../themeColors';
 
 export default function Home({ user }) {
   const { theme } = useContext(ThemeContext);
+  const { t } = useTranslate();
   const cards = [
-    { to: '/vault', title: 'Vault', desc: 'Manage passwords, OTP secrets, and sensitive data', icon: Lock },
-    { to: '/notes', title: 'Notes', desc: 'Create and share encrypted notes securely', icon: FileText },
+    { to: '/vault', title: t('home.vaultTitle'), desc: t('home.vaultDesc'), icon: Lock },
+    { to: '/notes', title: t('home.notesTitle'), desc: t('home.notesDesc'), icon: FileText },
+    { to: '/wallet', title: t('wallet.title'), desc: t('wallet.desc') || 'Manage your digital assets and cards', icon: Wallet },
+    { to: '/breach', title: t('breach.title'), desc: t('breach.desc') || 'Monitor your data for security breaches', icon: ShieldAlert },
   ];
   // Use only themeColors.js for all backgrounds, text, cards, and buttons
   let mainClass = 'min-h-screen ' + getThemeColor(theme, 'background');
@@ -20,10 +24,10 @@ export default function Home({ user }) {
   const subheadingClass = getThemeColor(theme, 'textSecondary');
   const heroBtnClass = getThemeColor(theme, 'button') + ' inline-flex items-center gap-2 px-8 py-4 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all';
   const ctaBtnClass = getThemeColor(theme, 'button') + ' inline-flex items-center gap-2 px-8 py-4 rounded-lg font-semibold transition-colors shadow-lg';
-  const serviceCardClass = `group relative flex items-center rounded-2xl border ${getThemeColor(theme, 'border')} ${cardBg} p-4 sm:p-5 shadow-md hover:shadow-2xl transition-all hover:-translate-y-0.5`;
-  const serviceIconWrapClass = `flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center mr-4 ${getThemeColor(theme, 'backgroundSecondary')} group-hover:${getThemeColor(theme, 'accent')} transition-colors`;
-  const serviceIconClass = `transition-colors ${getThemeColor(theme, 'text')} group-hover:${getThemeColor(theme, 'accentText')}`;
-  const servicePillClass = `ml-auto px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide ${getThemeColor(theme, 'button')} shadow-sm group-hover:shadow-md transition-all`;
+  const serviceCardClass = ''; // Unused after new design
+  const serviceIconWrapClass = ''; // Unused after new design
+  const serviceIconClass = ''; // Unused after new design
+  const servicePillClass = ''; // Unused after new design
   return (
     <main className={mainClass}>
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-20">
@@ -47,16 +51,58 @@ export default function Home({ user }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-10 sm:mb-14">
           {cards.map(c => {
             const Icon = c.icon;
+            // Define distinctive color themes for each service using centralized tokens
+            let bgClass = '';
+            let borderClass = '';
+            let iconClass = '';
+            let titleClass = '';
+            
+            // Vault: Secure Blue/Cyan
+            if (c.to === '/vault') {
+              bgClass = getThemeColor(theme, 'featureVaultBg');
+              borderClass = getThemeColor(theme, 'featureVaultBorder');
+              iconClass = getThemeColor(theme, 'featureVaultIcon');
+              titleClass = getThemeColor(theme, 'featureVaultText');
+            } 
+            // Notes: Private Amber/Orange
+            else if (c.to === '/notes') {
+              bgClass = getThemeColor(theme, 'featureNotesBg');
+              borderClass = getThemeColor(theme, 'featureNotesBorder');
+              iconClass = getThemeColor(theme, 'featureNotesIcon');
+              titleClass = getThemeColor(theme, 'featureNotesText');
+            }
+            // Wallet: FinTech Violet/Purple
+            else if (c.to === '/wallet') {
+              bgClass = getThemeColor(theme, 'featureWalletBg');
+              borderClass = getThemeColor(theme, 'featureWalletBorder');
+              iconClass = getThemeColor(theme, 'featureWalletIcon');
+              titleClass = getThemeColor(theme, 'featureWalletText');
+            }
+            // Breach: Alert Red/Rose
+            else if (c.to === '/breach') {
+              bgClass = getThemeColor(theme, 'featureBreachBg');
+              borderClass = getThemeColor(theme, 'featureBreachBorder');
+              iconClass = getThemeColor(theme, 'featureBreachIcon');
+              titleClass = getThemeColor(theme, 'featureBreachText');
+            }
+
             return (
-              <Link key={c.to} to={c.to} className={serviceCardClass}>
-                <div className={serviceIconWrapClass}>
-                  <Icon size={36} className={serviceIconClass} />
+              <Link key={c.to} to={c.to} className={`group relative flex items-center rounded-2xl border p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl overflow-hidden ${bgClass} ${borderClass}`}>
+                {/* Decorative background glow */}
+                <div className="absolute -right-10 -bottom-10 w-32 h-32 rounded-full opacity-0 group-hover:opacity-20 transition-opacity blur-3xl bg-current"></div>
+                
+                <div className={`flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center mr-5 shadow-sm transition-transform group-hover:scale-110 ${iconClass}`}>
+                  <Icon size={28} strokeWidth={2} />
                 </div>
-                <div className="flex flex-col justify-center min-w-0">
-                  <h3 className={`text-base sm:text-lg font-bold mb-0.5 truncate ${cardTitleClass}`}>{c.title}</h3>
-                  <p className={`text-xs sm:text-sm leading-snug truncate ${cardDescClass}`}>{c.desc}</p>
+                
+                <div className="flex flex-col justify-center min-w-0 flex-1 z-10">
+                  <h3 className={`text-lg font-bold mb-1 truncate ${titleClass}`}>{c.title}</h3>
+                  <p className={`text-sm leading-relaxed line-clamp-2 ${cardDescClass} opacity-90`}>{c.desc}</p>
                 </div>
-                <span className={servicePillClass}>Open</span>
+                
+                <span className={`ml-3 p-2 rounded-full transition-all opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 bg-white/20 backdrop-blur-sm`}>
+                  <ArrowRight size={18} className={getThemeColor(theme, 'text')} />
+                </span>
               </Link>
             );
           })}

@@ -11,6 +11,8 @@ import authRoutes from './routes/auth.js';
 import vaultRoutes from './routes/vault.js';
 import notesRoutes from './routes/notes.js';
 import userRoutes from './routes/user.js';
+import breachRoutes from './routes/breach.js';
+import walletRoutes from './routes/wallet.js';
 
 const app = express();
 
@@ -31,6 +33,8 @@ app.use('/api/auth', rateLimit('auth'), authRoutes);
 app.use('/api/vault', rateLimit('api'), vaultRoutes);
 app.use('/api/notes', rateLimit('api'), notesRoutes);
 app.use('/api/user', rateLimit('api'), userRoutes);
+app.use('/api/breach', rateLimit('api'), breachRoutes);
+app.use('/api/wallet', rateLimit('api'), walletRoutes);
 
 
 // Initialize database migrations

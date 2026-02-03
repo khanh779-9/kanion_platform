@@ -24,6 +24,30 @@ export const themeColors = {
     effect: 'ring-cyan-500',
     focusRing: 'focus:ring-cyan-500',
     dangerText: 'text-red-600',
+
+    // Feature: Vault (Blue/Cyan)
+    featureVaultBg: 'bg-gradient-to-br from-cyan-500/10 to-blue-500/10 hover:from-cyan-500/20 hover:to-blue-500/20',
+    featureVaultBorder: 'border-cyan-200/50',
+    featureVaultIcon: 'text-cyan-600 bg-cyan-100',
+    featureVaultText: 'text-cyan-700', // Darker text for light mode
+
+    // Feature: Notes (Amber/Orange)
+    featureNotesBg: 'bg-gradient-to-br from-amber-500/10 to-orange-500/10 hover:from-amber-500/20 hover:to-orange-500/20',
+    featureNotesBorder: 'border-amber-200/50',
+    featureNotesIcon: 'text-amber-600 bg-amber-100',
+    featureNotesText: 'text-amber-700',
+
+    // Feature: Wallet (Violet/Purple)
+    featureWalletBg: 'bg-gradient-to-br from-violet-500/10 to-purple-500/10 hover:from-violet-500/20 hover:to-purple-500/20',
+    featureWalletBorder: 'border-violet-200/50',
+    featureWalletIcon: 'text-violet-600 bg-violet-100',
+    featureWalletText: 'text-violet-700',
+
+    // Feature: Breach (Red/Rose)
+    featureBreachBg: 'bg-gradient-to-br from-red-500/10 to-rose-500/10 hover:from-red-500/20 hover:to-rose-500/20',
+    featureBreachBorder: 'border-red-200/50',
+    featureBreachIcon: 'text-red-600 bg-red-100',
+    featureBreachText: 'text-red-700',
   },
   dark: {
     background: 'bg-[#0a0e17]', // deep blue-black
@@ -47,6 +71,30 @@ export const themeColors = {
     effect: 'ring-cyan-400',
     focusRing: 'focus:ring-cyan-400',
     dangerText: 'text-red-400',
+
+    // Feature: Vault (Blue/Cyan)
+    featureVaultBg: 'bg-gradient-to-br from-cyan-900/40 to-blue-900/40 hover:from-cyan-800/50 hover:to-blue-800/50',
+    featureVaultBorder: 'border-cyan-800/50',
+    featureVaultIcon: 'text-cyan-400 bg-cyan-900/30',
+    featureVaultText: 'text-cyan-100',
+    
+    // Feature: Notes (Amber/Orange)
+    featureNotesBg: 'bg-gradient-to-br from-amber-900/40 to-orange-900/40 hover:from-amber-800/50 hover:to-orange-800/50',
+    featureNotesBorder: 'border-amber-800/50',
+    featureNotesIcon: 'text-amber-400 bg-amber-900/30',
+    featureNotesText: 'text-amber-100', // Changed to lighter amber for dark mode text
+    
+    // Feature: Wallet (Violet/Purple)
+    featureWalletBg: 'bg-gradient-to-br from-violet-900/40 to-purple-900/40 hover:from-violet-800/50 hover:to-purple-800/50',
+    featureWalletBorder: 'border-violet-800/50',
+    featureWalletIcon: 'text-violet-400 bg-violet-900/30',
+    featureWalletText: 'text-violet-100',
+
+    // Feature: Breach (Red/Rose)
+    featureBreachBg: 'bg-gradient-to-br from-red-900/40 to-rose-900/40 hover:from-red-800/50 hover:to-rose-800/50',
+    featureBreachBorder: 'border-red-800/50',
+    featureBreachIcon: 'text-red-400 bg-red-900/30',
+    featureBreachText: 'text-red-100',
   },
   system: {}, // handled in getThemeColor
 };

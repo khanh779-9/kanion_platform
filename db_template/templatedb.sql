@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
--- Máy chủ:                      db.cmcbomljqmmbkzjbthcw.supabase.co
+-- Host:                         db.cmcbomljqmmbkzjbthcw.supabase.co
 -- Server version:               PostgreSQL 17.6 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 13.2.0, 64-bit
 -- Server OS:                    
--- HeidiSQL Phiên bản:           12.8.0.6908
+-- HeidiSQL Version:             12.8.0.6908
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -633,13 +633,11 @@ CREATE TABLE IF NOT EXISTS "devices" (
 	"fingerprint" TEXT NULL DEFAULT NULL,
 	"trusted" BOOLEAN NOT NULL DEFAULT false,
 	"last_used_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
-	PRIMARY KEY ("id"),
-	KEY "idx_devices_account" ("account_id"),
-	KEY "idx_account_devices_account_id" ("account_id"),
 	CONSTRAINT "devices_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "users" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
 );
 
 -- Dumping data for table account.devices: -1 rows
+DELETE FROM "devices";
 /*!40000 ALTER TABLE "devices" DISABLE KEYS */;
 /*!40000 ALTER TABLE "devices" ENABLE KEYS */;
 
@@ -654,12 +652,11 @@ CREATE TABLE IF NOT EXISTS "profiles" (
 	"bio" TEXT NULL DEFAULT NULL,
 	"created_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
 	"updated_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
-	PRIMARY KEY ("id"),
-	UNIQUE "profiles_account_id_key" ("account_id"),
 	CONSTRAINT "profiles_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "users" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
 );
 
 -- Dumping data for table account.profiles: -1 rows
+DELETE FROM "profiles";
 /*!40000 ALTER TABLE "profiles" DISABLE KEYS */;
 -- Dumping structure for table account.security
 CREATE TABLE IF NOT EXISTS "security" (
@@ -672,12 +669,11 @@ CREATE TABLE IF NOT EXISTS "security" (
 	"require_trusted_device" BOOLEAN NOT NULL DEFAULT false,
 	"created_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
 	"updated_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
-	PRIMARY KEY ("id"),
-	UNIQUE "security_account_id_key" ("account_id"),
 	CONSTRAINT "security_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "users" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
 );
 
 -- Dumping data for table account.security: -1 rows
+DELETE FROM "security";
 /*!40000 ALTER TABLE "security" DISABLE KEYS */;
 /*!40000 ALTER TABLE "security" ENABLE KEYS */;
 
@@ -691,14 +687,11 @@ CREATE TABLE IF NOT EXISTS "sessions" (
 	"created_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
 	"expires_at" TIMESTAMPTZ NULL DEFAULT NULL,
 	"revoked_at" TIMESTAMPTZ NULL DEFAULT NULL,
-	PRIMARY KEY ("id"),
-	KEY "idx_sessions_account" ("account_id"),
-	KEY "idx_account_sessions_account_id" ("account_id"),
-	KEY "idx_account_sessions_revoked" ("account_id", "revoked_at"),
 	CONSTRAINT "sessions_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "users" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
 );
 
 -- Dumping data for table account.sessions: -1 rows
+DELETE FROM "sessions";
 /*!40000 ALTER TABLE "sessions" DISABLE KEYS */;
 /*!40000 ALTER TABLE "sessions" ENABLE KEYS */;
 
@@ -709,24 +702,21 @@ CREATE TABLE IF NOT EXISTS "settings" (
 	"key" TEXT NOT NULL,
 	"value" TEXT NOT NULL,
 	"updated_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
-	PRIMARY KEY ("id"),
-	UNIQUE "settings_account_id_key_key" ("account_id", "key"),
-	KEY "idx_settings_account" ("account_id"),
-	KEY "idx_account_settings_account_id" ("account_id"),
 	CONSTRAINT "settings_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "users" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
 );
 
--- Dumping data for table account.settings: -1 rows
+-- Dumping data for table account.settings: 1 rows
+DELETE FROM "settings";
 /*!40000 ALTER TABLE "settings" DISABLE KEYS */;
 -- Dumping structure for table account.statuses
 CREATE TABLE IF NOT EXISTS "statuses" (
 	"code" VARCHAR(20) NOT NULL,
 	"description" TEXT NULL DEFAULT NULL,
-	"is_active" BOOLEAN NULL DEFAULT true,
-	PRIMARY KEY ("code")
+	"is_active" BOOLEAN NULL DEFAULT true
 );
 
 -- Dumping data for table account.statuses: -1 rows
+DELETE FROM "statuses";
 /*!40000 ALTER TABLE "statuses" DISABLE KEYS */;
 -- Dumping structure for table account.users
 CREATE TABLE IF NOT EXISTS "users" (
@@ -736,32 +726,46 @@ CREATE TABLE IF NOT EXISTS "users" (
 	"status" VARCHAR(20) NOT NULL DEFAULT 'active',
 	"created_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
 	"updated_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
-	PRIMARY KEY ("id"),
-	UNIQUE "users_email_key" ("email"),
-	KEY "idx_accounts_email" ("email"),
-	KEY "idx_account_users_email" ("email"),
-	KEY "idx_account_users_created_at" ("created_at"),
 	CONSTRAINT "users_status_fkey" FOREIGN KEY ("status") REFERENCES "statuses" ("code") ON UPDATE NO ACTION ON DELETE NO ACTION
 );
 
 -- Dumping data for table account.users: 1 rows
+DELETE FROM "users";
 /*!40000 ALTER TABLE "users" DISABLE KEYS */;
--- Dumping structure for table audit.logs
-CREATE TABLE IF NOT EXISTS "logs" (
+-- Dumping structure for table breach.monitor
+CREATE TABLE IF NOT EXISTS "monitor" (
 	"id" SERIAL NOT NULL,
-	"account_id" BIGINT NULL DEFAULT NULL,
-	"action" TEXT NOT NULL,
-	"resource_type" TEXT NULL DEFAULT NULL,
-	"resource_id" TEXT NULL DEFAULT NULL,
-	"details" JSONB NULL DEFAULT NULL,
-	"ip_address" TEXT NULL DEFAULT NULL,
-	"user_agent" TEXT NULL DEFAULT NULL,
-	"created_at" TIMESTAMPTZ NULL DEFAULT now(),
-	CONSTRAINT "logs_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "account"."users" ("id") ON UPDATE NO ACTION ON DELETE SET NULL
+	"user_id" SERIAL NOT NULL,
+	"monitor_type" TEXT NOT NULL,
+	"monitor_value" TEXT NOT NULL,
+	"status" TEXT NOT NULL DEFAULT 'active',
+	"created_at" TIMESTAMP NULL DEFAULT now(),
+	"updated_at" TIMESTAMP NULL DEFAULT now(),
+	CONSTRAINT "fk_breach_monitor_user" FOREIGN KEY ("user_id") REFERENCES "account"."users" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
 );
 
--- Dumping data for table audit.logs: -1 rows
-/*!40000 ALTER TABLE "logs" DISABLE KEYS */;
+-- Dumping data for table breach.monitor: -1 rows
+DELETE FROM "monitor";
+/*!40000 ALTER TABLE "monitor" DISABLE KEYS */;
+/*!40000 ALTER TABLE "monitor" ENABLE KEYS */;
+
+-- Dumping structure for table breach.result
+CREATE TABLE IF NOT EXISTS "result" (
+	"id" SERIAL NOT NULL,
+	"monitor_id" SERIAL NOT NULL,
+	"breached" BOOLEAN NOT NULL,
+	"breach_source" TEXT NULL DEFAULT NULL,
+	"breach_date" TIMESTAMP NULL DEFAULT NULL,
+	"raw_data" JSONB NULL DEFAULT NULL,
+	"checked_at" TIMESTAMP NULL DEFAULT now(),
+	CONSTRAINT "fk_breach_result_monitor" FOREIGN KEY ("monitor_id") REFERENCES "monitor" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+
+-- Dumping data for table breach.result: -1 rows
+DELETE FROM "result";
+/*!40000 ALTER TABLE "result" DISABLE KEYS */;
+/*!40000 ALTER TABLE "result" ENABLE KEYS */;
+
 -- Dumping structure for table note.item
 CREATE TABLE IF NOT EXISTS "item" (
 	"id" UUID NOT NULL DEFAULT gen_random_uuid(),
@@ -772,14 +776,13 @@ CREATE TABLE IF NOT EXISTS "item" (
 	"password" BYTEA NULL DEFAULT NULL,
 	"created_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
 	"updated_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
-  "color" TEXT,
+	"color" TEXT NULL DEFAULT NULL,
 	CONSTRAINT "fk_note_item_account" FOREIGN KEY ("account_id") REFERENCES "account"."users" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
 );
 
 -- Dumping data for table note.item: -1 rows
+DELETE FROM "item";
 /*!40000 ALTER TABLE "item" DISABLE KEYS */;
-/*!40000 ALTER TABLE "item" ENABLE KEYS */;
-
 -- Dumping structure for table note.share
 CREATE TABLE IF NOT EXISTS "share" (
 	"id" SERIAL NOT NULL,
@@ -795,6 +798,7 @@ CREATE TABLE IF NOT EXISTS "share" (
 );
 
 -- Dumping data for table note.share: -1 rows
+DELETE FROM "share";
 /*!40000 ALTER TABLE "share" DISABLE KEYS */;
 /*!40000 ALTER TABLE "share" ENABLE KEYS */;
 
@@ -814,189 +818,8 @@ CREATE TABLE IF NOT EXISTS "items" (
 );
 
 -- Dumping data for table notification.items: -1 rows
+DELETE FROM "items";
 /*!40000 ALTER TABLE "items" DISABLE KEYS */;
-/*!40000 ALTER TABLE "items" ENABLE KEYS */;
-
--- Dumping structure for function public.armor
-DELIMITER //
-CREATE FUNCTION "armor"() RETURNS TEXT AS $$ pg_armor $$//
-DELIMITER ;
-
--- Dumping structure for function public.armor
-DELIMITER //
-CREATE FUNCTION "armor"() RETURNS TEXT AS $$ pg_armor $$//
-DELIMITER ;
-
--- Dumping structure for function public.crypt
-DELIMITER //
-CREATE FUNCTION "crypt"() RETURNS TEXT AS $$ pg_crypt $$//
-DELIMITER ;
-
--- Dumping structure for function public.dearmor
-DELIMITER //
-CREATE FUNCTION "dearmor"() RETURNS BYTEA AS $$ pg_dearmor $$//
-DELIMITER ;
-
--- Dumping structure for function public.decrypt
-DELIMITER //
-CREATE FUNCTION "decrypt"() RETURNS BYTEA AS $$ pg_decrypt $$//
-DELIMITER ;
-
--- Dumping structure for function public.decrypt_iv
-DELIMITER //
-CREATE FUNCTION "decrypt_iv"() RETURNS BYTEA AS $$ pg_decrypt_iv $$//
-DELIMITER ;
-
--- Dumping structure for function public.digest
-DELIMITER //
-CREATE FUNCTION "digest"() RETURNS BYTEA AS $$ pg_digest $$//
-DELIMITER ;
-
--- Dumping structure for function public.digest
-DELIMITER //
-CREATE FUNCTION "digest"() RETURNS BYTEA AS $$ pg_digest $$//
-DELIMITER ;
-
--- Dumping structure for function public.encrypt
-DELIMITER //
-CREATE FUNCTION "encrypt"() RETURNS BYTEA AS $$ pg_encrypt $$//
-DELIMITER ;
-
--- Dumping structure for function public.encrypt_iv
-DELIMITER //
-CREATE FUNCTION "encrypt_iv"() RETURNS BYTEA AS $$ pg_encrypt_iv $$//
-DELIMITER ;
-
--- Dumping structure for function public.gen_random_bytes
-DELIMITER //
-CREATE FUNCTION "gen_random_bytes"() RETURNS BYTEA AS $$ pg_random_bytes $$//
-DELIMITER ;
-
--- Dumping structure for function public.gen_random_uuid
-DELIMITER //
-CREATE FUNCTION "gen_random_uuid"() RETURNS UUID AS $$ pg_random_uuid $$//
-DELIMITER ;
-
--- Dumping structure for function public.gen_salt
-DELIMITER //
-CREATE FUNCTION "gen_salt"() RETURNS TEXT AS $$ pg_gen_salt_rounds $$//
-DELIMITER ;
-
--- Dumping structure for function public.gen_salt
-DELIMITER //
-CREATE FUNCTION "gen_salt"() RETURNS TEXT AS $$ pg_gen_salt $$//
-DELIMITER ;
-
--- Dumping structure for function public.hmac
-DELIMITER //
-CREATE FUNCTION "hmac"() RETURNS BYTEA AS $$ pg_hmac $$//
-DELIMITER ;
-
--- Dumping structure for function public.hmac
-DELIMITER //
-CREATE FUNCTION "hmac"() RETURNS BYTEA AS $$ pg_hmac $$//
-DELIMITER ;
-
--- Dumping structure for function public.pgp_armor_headers
-DELIMITER //
-CREATE FUNCTION "pgp_armor_headers"("" TEXT, key , value ) RETURNS UNKNOWN AS $$ pgp_armor_headers $$//
-DELIMITER ;
-
--- Dumping structure for function public.pgp_key_id
-DELIMITER //
-CREATE FUNCTION "pgp_key_id"() RETURNS TEXT AS $$ pgp_key_id_w $$//
-DELIMITER ;
-
--- Dumping structure for function public.pgp_pub_decrypt
-DELIMITER //
-CREATE FUNCTION "pgp_pub_decrypt"() RETURNS TEXT AS $$ pgp_pub_decrypt_text $$//
-DELIMITER ;
-
--- Dumping structure for function public.pgp_pub_decrypt
-DELIMITER //
-CREATE FUNCTION "pgp_pub_decrypt"() RETURNS TEXT AS $$ pgp_pub_decrypt_text $$//
-DELIMITER ;
-
--- Dumping structure for function public.pgp_pub_decrypt
-DELIMITER //
-CREATE FUNCTION "pgp_pub_decrypt"() RETURNS TEXT AS $$ pgp_pub_decrypt_text $$//
-DELIMITER ;
-
--- Dumping structure for function public.pgp_pub_decrypt_bytea
-DELIMITER //
-CREATE FUNCTION "pgp_pub_decrypt_bytea"() RETURNS BYTEA AS $$ pgp_pub_decrypt_bytea $$//
-DELIMITER ;
-
--- Dumping structure for function public.pgp_pub_decrypt_bytea
-DELIMITER //
-CREATE FUNCTION "pgp_pub_decrypt_bytea"() RETURNS BYTEA AS $$ pgp_pub_decrypt_bytea $$//
-DELIMITER ;
-
--- Dumping structure for function public.pgp_pub_decrypt_bytea
-DELIMITER //
-CREATE FUNCTION "pgp_pub_decrypt_bytea"() RETURNS BYTEA AS $$ pgp_pub_decrypt_bytea $$//
-DELIMITER ;
-
--- Dumping structure for function public.pgp_pub_encrypt
-DELIMITER //
-CREATE FUNCTION "pgp_pub_encrypt"() RETURNS BYTEA AS $$ pgp_pub_encrypt_text $$//
-DELIMITER ;
-
--- Dumping structure for function public.pgp_pub_encrypt
-DELIMITER //
-CREATE FUNCTION "pgp_pub_encrypt"() RETURNS BYTEA AS $$ pgp_pub_encrypt_text $$//
-DELIMITER ;
-
--- Dumping structure for function public.pgp_pub_encrypt_bytea
-DELIMITER //
-CREATE FUNCTION "pgp_pub_encrypt_bytea"() RETURNS BYTEA AS $$ pgp_pub_encrypt_bytea $$//
-DELIMITER ;
-
--- Dumping structure for function public.pgp_pub_encrypt_bytea
-DELIMITER //
-CREATE FUNCTION "pgp_pub_encrypt_bytea"() RETURNS BYTEA AS $$ pgp_pub_encrypt_bytea $$//
-DELIMITER ;
-
--- Dumping structure for function public.pgp_sym_decrypt
-DELIMITER //
-CREATE FUNCTION "pgp_sym_decrypt"() RETURNS TEXT AS $$ pgp_sym_decrypt_text $$//
-DELIMITER ;
-
--- Dumping structure for function public.pgp_sym_decrypt
-DELIMITER //
-CREATE FUNCTION "pgp_sym_decrypt"() RETURNS TEXT AS $$ pgp_sym_decrypt_text $$//
-DELIMITER ;
-
--- Dumping structure for function public.pgp_sym_decrypt_bytea
-DELIMITER //
-CREATE FUNCTION "pgp_sym_decrypt_bytea"() RETURNS BYTEA AS $$ pgp_sym_decrypt_bytea $$//
-DELIMITER ;
-
--- Dumping structure for function public.pgp_sym_decrypt_bytea
-DELIMITER //
-CREATE FUNCTION "pgp_sym_decrypt_bytea"() RETURNS BYTEA AS $$ pgp_sym_decrypt_bytea $$//
-DELIMITER ;
-
--- Dumping structure for function public.pgp_sym_encrypt
-DELIMITER //
-CREATE FUNCTION "pgp_sym_encrypt"() RETURNS BYTEA AS $$ pgp_sym_encrypt_text $$//
-DELIMITER ;
-
--- Dumping structure for function public.pgp_sym_encrypt
-DELIMITER //
-CREATE FUNCTION "pgp_sym_encrypt"() RETURNS BYTEA AS $$ pgp_sym_encrypt_text $$//
-DELIMITER ;
-
--- Dumping structure for function public.pgp_sym_encrypt_bytea
-DELIMITER //
-CREATE FUNCTION "pgp_sym_encrypt_bytea"() RETURNS BYTEA AS $$ pgp_sym_encrypt_bytea $$//
-DELIMITER ;
-
--- Dumping structure for function public.pgp_sym_encrypt_bytea
-DELIMITER //
-CREATE FUNCTION "pgp_sym_encrypt_bytea"() RETURNS BYTEA AS $$ pgp_sym_encrypt_bytea $$//
-DELIMITER ;
-
 -- Dumping structure for function vault.pg_get_coldef
 DELIMITER //
 CREATE FUNCTION "pg_get_coldef"(in_schema TEXT, in_table TEXT, in_column TEXT, oldway BOOLEAN) RETURNS TEXT AS $$ 
@@ -1626,9 +1449,8 @@ CREATE TABLE IF NOT EXISTS "items" (
 );
 
 -- Dumping data for table vault.items: -1 rows
+DELETE FROM "items";
 /*!40000 ALTER TABLE "items" DISABLE KEYS */;
-/*!40000 ALTER TABLE "items" ENABLE KEYS */;
-
 -- Dumping structure for table vault.item_tags
 CREATE TABLE IF NOT EXISTS "item_tags" (
 	"item_id" INTEGER NOT NULL,
@@ -1638,6 +1460,7 @@ CREATE TABLE IF NOT EXISTS "item_tags" (
 );
 
 -- Dumping data for table vault.item_tags: -1 rows
+DELETE FROM "item_tags";
 /*!40000 ALTER TABLE "item_tags" DISABLE KEYS */;
 /*!40000 ALTER TABLE "item_tags" ENABLE KEYS */;
 
@@ -1651,8 +1474,42 @@ CREATE TABLE IF NOT EXISTS "tags" (
 );
 
 -- Dumping data for table vault.tags: -1 rows
+DELETE FROM "tags";
 /*!40000 ALTER TABLE "tags" DISABLE KEYS */;
 /*!40000 ALTER TABLE "tags" ENABLE KEYS */;
+
+-- Dumping structure for table wallet.items
+CREATE TABLE IF NOT EXISTS "items" (
+	"id" SERIAL NOT NULL,
+	"account_id" BIGINT NOT NULL,
+	"wallet_type" TEXT NOT NULL,
+	"name" TEXT NOT NULL,
+	"address" TEXT NULL DEFAULT NULL,
+	"encrypted_secret" BYTEA NOT NULL,
+	"description" TEXT NULL DEFAULT NULL,
+	"created_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
+	"updated_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
+	CONSTRAINT "items_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "account"."users" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+
+-- Dumping data for table wallet.items: -1 rows
+DELETE FROM "items";
+/*!40000 ALTER TABLE "items" DISABLE KEYS */;
+/*!40000 ALTER TABLE "items" ENABLE KEYS */;
+
+-- Dumping structure for table wallet.metadata
+CREATE TABLE IF NOT EXISTS "metadata" (
+	"id" SERIAL NOT NULL,
+	"wallet_id" SERIAL NOT NULL,
+	"key" TEXT NOT NULL,
+	"value" TEXT NOT NULL,
+	CONSTRAINT "metadata_wallet_id_fkey" FOREIGN KEY ("wallet_id") REFERENCES "items" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+
+-- Dumping data for table wallet.metadata: -1 rows
+DELETE FROM "metadata";
+/*!40000 ALTER TABLE "metadata" DISABLE KEYS */;
+/*!40000 ALTER TABLE "metadata" ENABLE KEYS */;
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

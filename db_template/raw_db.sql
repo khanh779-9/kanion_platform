@@ -106,9 +106,9 @@ CREATE TABLE vault.items (
 
   type vault.vault_type NOT NULL DEFAULT 'other',
 
-  name VARCHAR(150) NOT NULL,
-  username VARCHAR(150),
-  email VARCHAR(255),
+  name TEXT NOT NULL,
+  username TEXT,
+  email TEXT,
 
   password TEXT,
   otp_secret TEXT,
@@ -211,5 +211,88 @@ CREATE TABLE account.security (
 
     UNIQUE (account_id)
 );
+
+
+CREATE SCHEMA IF NOT EXISTS wallet;
+
+CREATE TABLE wallet.items (
+    id BIGSERIAL PRIMARY KEY,
+
+    account_id BIGINT NOT NULL
+        REFERENCES account.users(id)
+        ON DELETE CASCADE,
+
+    wallet_type TEXT NOT NULL,
+    -- 'crypto', 'blockchain', 'watch_only'
+
+    name TEXT NOT NULL,
+
+    address TEXT,
+    encrypted_secret BYTEA NOT NULL, -- private key / seed phrase
+
+    description TEXT,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE wallet.metadata (
+    id BIGSERIAL PRIMARY KEY,
+    wallet_id BIGSERIAL NOT NULL
+        REFERENCES wallet.items(id)
+        ON DELETE CASCADE,
+
+    key TEXT NOT NULL,
+    value TEXT NOT NULL,
+
+    UNIQUE (wallet_id, key)
+);
+
+
+CREATE SCHEMA IF NOT EXISTS breach;
+
+CREATE TABLE breach.monitor (
+    id BIGSERIAL PRIMARY KEY,
+
+    user_id BIGSERIAL NOT NULL,
+
+    monitor_type TEXT NOT NULL,
+    -- email | username | domain | phone | wallet | custom
+
+    monitor_value TEXT NOT NULL,
+    -- email cụ thể, domain, địa chỉ ví, v.v.
+
+    status TEXT NOT NULL DEFAULT 'active',
+    -- active | paused | deleted
+
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+
+    CONSTRAINT fk_breach_monitor_user
+        FOREIGN KEY (user_id)
+        REFERENCES account.users(id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE breach.result (
+    id BIGSERIAL PRIMARY KEY,
+
+    monitor_id BIGSERIAL NOT NULL,
+
+    breached BOOLEAN NOT NULL,
+    breach_source TEXT,
+    breach_date TIMESTAMP,
+
+    raw_data JSONB,
+
+    checked_at TIMESTAMP DEFAULT NOW(),
+
+    CONSTRAINT fk_breach_result_monitor
+        FOREIGN KEY (monitor_id)
+        REFERENCES breach.monitor(id)
+        ON DELETE CASCADE
+);
+
+
 
 

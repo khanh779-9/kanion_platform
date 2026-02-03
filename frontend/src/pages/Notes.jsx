@@ -104,8 +104,8 @@ export default function Notes() {
         {/* Header */}
         <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-4">
-            <div className={"p-3 rounded-xl shadow-lg " + getThemeColor(theme, 'accent')}>
-              <FileText size={32} className={getThemeColor(theme, 'accentText')} />
+            <div className={`p-3 rounded-xl shadow-lg ${getThemeColor(theme, 'featureNotesIcon')}`}>
+              <FileText size={32} className="text-current" />
             </div>
             <div>
               <h1 className={"text-4xl font-bold " + getThemeColor(theme, 'text')}>{t('notes.secureNotes')}</h1>
@@ -188,7 +188,7 @@ export default function Notes() {
                   <button
                     type="button"
                     onClick={resetForm}
-                    className={"flex-1 py-2 rounded-md font-semibold text-xs " + getThemeColor(theme, 'backgroundSecondary') + ' ' + getThemeColor(theme, 'textSecondary')}
+                    className={"flex-1 py-2 rounded-md font-semibold text-xs transition-colors " + getThemeColor(theme, 'buttonSecondary')}
                   >
                     {t('notes.cancel')}
                   </button>
@@ -337,7 +337,7 @@ export default function Notes() {
                 <button
                   type="button"
                   onClick={() => setShowViewModal(false)}
-                  className={"flex-1 py-2 rounded-lg font-semibold text-sm " + getThemeColor(theme, 'backgroundSecondary') + ' ' + getThemeColor(theme, 'textSecondary')}
+                  className={"flex-1 py-2 rounded-lg font-semibold text-sm transition-colors " + getThemeColor(theme, 'buttonSecondary')}
                 >
                   {t('notes.close')}
                 </button>
