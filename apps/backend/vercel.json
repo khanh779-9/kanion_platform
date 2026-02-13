@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "name": "kanion-backend",
+  "builds": [
+    {
+      "src": "src/index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/src/index.js"
+    },
+    {
+      "src": "/_vercel/speed-insights/(.*)",
+      "dest": "/src/index.js"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
