@@ -40,11 +40,18 @@ app.use('/api/wallet', rateLimit('api'), walletRoutes);
 // Initialize database migrations
 async function start() {
   try {
-    await ensureMigrations();
-    console.log('Migrations completed');
+    // Only run migrations if DATABASE_URL is set and RUN_MIGRATIONS is true
+    if (config.dbUrl && config.runMigrations) {
+      console.log('Running migrations...');
+      await ensureMigrations();
+      console.log('Migrations completed');
+    } else if (!config.dbUrl) {
+      console.warn('⚠️  DATABASE_URL not set. Skipping migrations. Set RUN_MIGRATIONS=true to run.');
+    }
   } catch (e) {
     console.error('Migration failed:', e.message);
-    process.exit(1);
+    // Don't exit - still start server to allow debugging
+    console.warn('Server starting despite migration error...');
   }
 
   app.listen(config.port, () => {

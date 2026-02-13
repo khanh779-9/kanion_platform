@@ -4,7 +4,8 @@ dotenv.config();
 
 export const config = {
   port: process.env.PORT ? Number(process.env.PORT) : 3000,
-  dbUrl: process.env.DATABASE_URL || 'postgres://postgres:G0Lp3NJdGCjy6P2e@db.cmcbomljqmmbkzjbthcw.supabase.co:5432/kanion_database',
+  dbUrl: process.env.DATABASE_URL,
   jwtSecret: process.env.JWT_SECRET || 'devsecret',
-  nodeEnv: process.env.NODE_ENV || 'development'
+  nodeEnv: process.env.NODE_ENV || 'development',
+  runMigrations: process.env.RUN_MIGRATIONS === 'true'
 };
