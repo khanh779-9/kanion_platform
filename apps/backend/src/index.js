@@ -15,6 +15,7 @@ import breachRoutes from './routes/breach.js';
 import walletRoutes from './routes/wallet.js';
 
 const app = express();
+ const __dirname = path.resolve(); // Serve static React build 
 
 // Security Middleware
 app.use(helmet());
@@ -54,7 +55,7 @@ async function start() {
     console.warn('Server starting despite migration error...');
   }
 
-  const __dirname = path.resolve(); // Serve static React build 
+
   app.use(express.static(path.join(__dirname, "../public"))); 
   app.get("*", (req, res) => { res.sendFile(path.join(__dirname, "../public/index.html")); });
   
