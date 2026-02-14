@@ -54,6 +54,10 @@ async function start() {
     console.warn('Server starting despite migration error...');
   }
 
+  const __dirname = path.resolve(); // Serve static React build 
+  app.use(express.static(path.join(__dirname, "../public"))); 
+  app.get("*", (req, res) => { res.sendFile(path.join(__dirname, "../public/index.html")); });
+  
   app.listen(config.port, () => {
     console.log(`Kanion Secure Space API listening on localhost:${config.port}`);
   });
