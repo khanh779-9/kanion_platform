@@ -55,7 +55,7 @@ async function start() {
   }
 
   app.listen(config.port, () => {
-    console.log(`Kanion Secure Space API listening on :${config.port}`);
+    console.log(`Kanion Secure Space API listening on localhost:${config.port}`);
   });
 }
 
