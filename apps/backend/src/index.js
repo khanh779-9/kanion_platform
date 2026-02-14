@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import helmet from 'helmet';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { config } from './config.js';
 import { pool } from './db/pool.js';
 import { ensureMigrations } from './db/migrate.js';
@@ -14,8 +16,10 @@ import userRoutes from './routes/user.js';
 import breachRoutes from './routes/breach.js';
 import walletRoutes from './routes/wallet.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
- const __dirname = path.resolve(); // Serve static React build 
 
 // Security Middleware
 app.use(helmet());
