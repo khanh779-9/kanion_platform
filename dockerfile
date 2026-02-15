@@ -1,6 +1,6 @@
 FROM node:20-bookworm-slim
 
-WORKDIR /app
+WORKDIR /apps
 
 # Copy manifest trước để cache deps tốt hơn
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
