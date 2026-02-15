@@ -113,7 +113,7 @@ pnpm run dev                # Máy chủ phát triển: http://localhost:5173
 
 ---
 
-## 📦 Xây Dựng cho Sản Xuất
+## 📦 Build Product
 
 ### Backend
 
@@ -174,7 +174,7 @@ FRONTEND_URL=https://your-frontend-url.com
 
 ---
 
-## 📖 Điểm Cuối API
+## 📖 Endpoint API
 
 **Xác thực:** `POST /auth/register`, `POST /auth/login`, `GET /auth/logout`
 
