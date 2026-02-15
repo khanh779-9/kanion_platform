@@ -1,9 +1,9 @@
 <div align="center">
    <h1>🔐 Kanion Secure Space</h1>
-   <b>Nền tảng quản lý mật khẩu, ghi chú an toàn & quản lý dữ liệu mã hóa</b>
+   <b>Full-stack platform for secure notes, password vault & encrypted data management</b>
    <br />
    <br />
-   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="Giấy phép: MIT">
+   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT">
    <img src="https://img.shields.io/badge/Frontend-React_18-61dafb.svg" alt="React 18">
    <img src="https://img.shields.io/badge/Backend-Node.js-339933.svg" alt="Node.js">
    <img src="https://img.shields.io/badge/Database-PostgreSQL-336791.svg" alt="PostgreSQL">
@@ -12,46 +12,47 @@
 
 ---
 
-## Tổng Quan
+## Overview
 
-**Kanion Secure Space** là một trình quản lý mật khẩu mã nguồn mở và nền tảng ghi chú mã hóa với mã hóa cấp quân sự. Được xây dựng với React 18, Node.js và PostgreSQL để lưu trữ an toàn mật khẩu, bí mật TOTP, ghi chú và dữ liệu cá nhân.
+**Kanion Secure Space** is an open-source password manager and encrypted notes platform with military-grade encryption. Built with React 18, Node.js, and PostgreSQL for secure storage of passwords, TOTP secrets, notes, and personal data.
 
-**Tính năng:**
-- 🔒 Mã hóa AES-256-GCM cho tất cả dữ liệu nhạy cảm
-- 🔐 Hỗ trợ TOTP 6 chữ số với đếm ngược trực tiếp
-- 📝 Ghi chú mã hóa với màu sắc tùy chỉnh
-- 🌗 Chủ đề Tối/Sáng/Tự động
-- 🌍 Đa ngôn ngữ (Tiếng Anh, Tiếng Việt)
-- 🎯 Thiết kế đáp ứng ưu tiên di động
-- 🪪 Xác thực JWT với nhật ký kiểm tra
+**Features:**
+
+- 🔒 AES-256-GCM encryption for all sensitive data
+- 🔐 6-digit TOTP support with live countdown
+- 📝 Encrypted notes with custom colors
+- 🌗 Dark/Light/Auto theme
+- 🌍 Multi-language (English, Vietnamese)
+- 🎯 Responsive mobile-first design
+- 🪪 JWT authentication with audit logs
 
 ---
 
-## 🛠 Công Nghệ
+## 🛠 Tech Stack
 
 **Frontend:** React 18 • Vite • TailwindCSS • Lucide React • Axios • React Router
 
 **Backend:** Node.js (v20+) • Express.js • PostgreSQL • Bcrypt • crypto (AES-256-GCM)
 
-**Công cụ:** pnpm • Docker • Docker Compose
+**Tools:** pnpm • Docker • Docker Compose
 
 ---
 
-## 📁 Cấu Trúc Dự Án
+## 📁 Project Structure
 
 ```
 Kanion_Platform/              # Monorepo
 ├── apps/
-│   ├── backend/             # API Express (Cổng: 3000)
+│   ├── backend/             # Express API (Port: 3000)
 │   │   ├── src/
 │   │   │   ├── routes/      # auth, vault, notes, user
 │   │   │   ├── middleware/  # auth, rateLimit
 │   │   │   ├── db/          # pool, migrate
 │   │   │   └── utils/       # encryption, auditLog
-│   │   └── sql/001_init.sql # Sơ đồ cơ sở dữ liệu
-│   └── frontend/            # Ứng dụng React (Cổng: 5173)
+│   │   └── sql/001_init.sql # Database schema
+│   └── frontend/            # React app (Port: 5173)
 │       └── src/
-│           ├── pages/       # Đăng nhập, Vault, Ghi chú, v.v.
+│           ├── pages/       # Login, Vault, Notes, etc
 │           ├── components/  # NavBar, Theme, Toast
 │           ├── api/         # client, notifications
 │           └── locales/     # en.json, vi.json
@@ -61,15 +62,15 @@ Kanion_Platform/              # Monorepo
 
 ---
 
-## ⚡ Bắt Đầu Nhanh
+## ⚡ Quick Start
 
-### Điều Kiện
+### Prerequisites
 
 - Node.js 20+ (LTS)
 - PostgreSQL 12+
-- pnpm (hoặc npm)
+- pnpm (or npm)
 
-### 1. Thiết Lập Cơ Sở Dữ Liệu
+### 1. Database Setup
 
 ```bash
 createdb kanion_db
@@ -80,40 +81,40 @@ psql -U postgres -d kanion_db -f apps/backend/sql/001_init.sql
 
 ```bash
 cd apps/backend
-cp .env.example .env        # Chỉnh sửa với cấu hình của bạn
+cp .env.example .env        # Edit with your config
 pnpm install
-pnpm run dev                # Chế độ phát triển
-# pnpm start               # Sản xuất
+pnpm run dev                # Dev mode
+# pnpm start               # Production
 ```
 
 ### 3. Frontend
 
 ```bash
 cd apps/frontend
-cp .env.example .env        # Chỉnh sửa URL API
+cp .env.example .env        # Edit API URL
 pnpm install
-pnpm run dev                # Máy chủ phát triển: http://localhost:5173
+pnpm run dev                # Dev server: http://localhost:5173
 ```
 
-### Truy Cập
+### Access
 
 - Frontend: http://localhost:5173
 - API: http://localhost:3000
 
 ---
 
-## 🔐 Tính Năng Bảo Mật
+## 🔐 Security Features
 
-- **Mã hóa:** AES-256-GCM cho tất cả dữ liệu nhạy cảm
-- **Xác thực:** Mã thông báo JWT (hết hạn 7 ngày)
-- **Bảo mật mật khẩu:** Bcrypt hashing (12 vòng)
-- **Giới hạn tần suất:** 10 yêu cầu/15 phút cho mỗi IP
-- **Nhật ký kiểm tra:** Nhật ký đăng nhập, theo dõi thiết bị, sự kiện bảo mật
-- **Tiêu đề:** CORS, CSP, X-Frame-Options tiêu đề bảo mật
+- **Encryption:** AES-256-GCM for all sensitive data
+- **Authentication:** JWT tokens (7-day expiration)
+- **Password Security:** Bcrypt hashing (12 rounds)
+- **Rate Limiting:** 10 requests/15 minutes per IP
+- **Audit Trail:** Login logs, device tracking, security events
+- **Headers:** CORS, CSP, X-Frame-Options security headers
 
 ---
 
-## 📦 Build Product
+## 📦 Building for Production
 
 ### Backend
 
@@ -128,34 +129,34 @@ pnpm start
 ```bash
 cd apps/frontend
 pnpm run build
-# Đầu ra: dist/ → Triển khai lên Vercel, Netlify, v.v.
+# Output: dist/ → Deploy to Vercel, Netlify, etc.
 ```
 
 ---
 
-## 🚀 Triển Khai (Render)
+## 🚀 Deployment (Render)
 
-### Điều Kiện
+### Prerequisites
 
-- Node.js v20 LTS (tránh v25.x)
-- Cơ sở dữ liệu PostgreSQL
-- pnpm-workspace.yaml trong thư mục gốc (đã được tạo sẵn)
+- Node.js v20 LTS (avoid v25.x)
+- PostgreSQL database
+- pnpm-workspace.yaml in root (already created)
 
-### Dịch Vụ Backend
-
-```bash
-# Xây dựng: pnpm install
-# Bắt đầu: cd apps/backend && npm start
-```
-
-### Dịch Vụ Frontend
+### Backend Service
 
 ```bash
-# Xây dựng: cd apps/frontend && pnpm install && npm run build
-# Thư mục xuất bản: apps/frontend/dist
+# Build: pnpm install
+# Start: cd apps/backend && npm start
 ```
 
-### Biến Môi Trường (Backend)
+### Frontend Service
+
+```bash
+# Build: cd apps/frontend && pnpm install && npm run build
+# Publish Directory: apps/frontend/dist
+```
+
+### Environment Variables (Backend)
 
 ```env
 PORT=3000
@@ -166,34 +167,34 @@ ENCRYPTION_KEY=your_encryption_key
 FRONTEND_URL=https://your-frontend-url.com
 ```
 
-**Khắc Phục Sự Cố:**
+**Troubleshooting:**
 
-- Lỗi: "Không tìm thấy gói 'express'" → Đảm bảo pnpm-lock.yaml đã được cam kết
-- Lỗi: "ERR_INVALID_THIS" → Cập nhật Node.js lên v20 LTS
-- Để biết hướng dẫn triển khai đầy đủ, xem [DEPLOYMENT.md](docs/DEPLOYMENT.md)
+- Error: "Cannot find package 'express'" → Ensure pnpm-lock.yaml is committed
+- Error: "ERR_INVALID_THIS" → Update Node.js to v20 LTS
+- For full deployment guide, see [DEPLOYMENT.md](docs/DEPLOYMENT.md)
 
 ---
 
-## 📖 Endpoint API
+## 📖 API Endpoints
 
-**Xác thực:** `POST /auth/register`, `POST /auth/login`, `GET /auth/logout`
+**Auth:** `POST /auth/register`, `POST /auth/login`, `GET /auth/logout`
 
 **Vault:** `GET/POST /vault/items`, `GET/PUT/DELETE /vault/items/:id`
 
-**Ghi chú:** `GET/POST /notes`, `PUT/DELETE /notes/:id`
+**Notes:** `GET/POST /notes`, `PUT/DELETE /notes/:id`
 
-**Người dùng:** `GET/PUT /user/profile`, `GET/PUT /user/appearance-settings`
-
----
-
-## 🎨 Tùy Chỉnh
-
-- **Ngôn ngữ:** Thêm bản dịch trong `frontend/src/locales/[lang].json`
-- **Chủ đề:** Chỉnh sửa `frontend/src/themeColors.js`
-- **Loại Vault:** Cập nhật enum cơ sở dữ liệu trong `001_init.sql`
+**User:** `GET/PUT /user/profile`, `GET/PUT /user/appearance-settings`
 
 ---
 
-## 📄 Giấy Phép
+## 🎨 Customization
 
-Giấy phép MIT - Xem tệp [LICENSE](LICENSE)
+- **Languages:** Add translations in `frontend/src/locales/[lang].json`
+- **Themes:** Edit `frontend/src/themeColors.js`
+- **Vault Types:** Update database enum in `001_init.sql`
+
+---
+
+## 📄 License
+
+MIT License - See [LICENSE](LICENSE) file
