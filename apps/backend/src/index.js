@@ -24,7 +24,7 @@ const app = express();
 // Security Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: config.frontendUrl,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -64,7 +64,7 @@ async function start() {
   app.get("*", (req, res) => { res.sendFile(path.join(__dirname, "../public/index.html")); });
   
   app.listen(config.port, () => {
-    console.log(`Kanion Secure Space API listening on localhost:${config.port}`);
+    console.log(`Kanion Secure Space API listening on ${config.backendUrl}`);
   });
 }
 
