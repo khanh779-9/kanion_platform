@@ -24,8 +24,9 @@ router.post("/register", async (req, res) => {
     return res.status(400).json({ error: parse.error.flatten() });
 
   const { email, password } = parse.data;
-  const client = await db.pool.connect();
+  let client;
   try {
+    client = await db.pool.connect();
     await client.query("BEGIN");
     // Check email uniqueness
     const emailExists = await client.query(
@@ -70,15 +71,19 @@ router.post("/register", async (req, res) => {
 
     res.status(201).json({ token, user: { id: user.id, email: user.email } });
   } catch (e) {
-    try {
-      await client.query("ROLLBACK");
-    } catch (_rollbackError) {
-      // ignore rollback errors to avoid masking original failure
+    if (client) {
+      try {
+        await client.query("ROLLBACK");
+      } catch (_rollbackError) {
+        // ignore rollback errors to avoid masking original failure
+      }
     }
     console.error("Register error:", e.message, e.code, e.detail);
     res.status(500).json({ error: "Registration failed" });
   } finally {
-    client.release();
+    if (client) {
+      client.release();
+    }
   }
 });
 
