@@ -27,8 +27,17 @@ export default function Register({ onAuthed }) {
     } catch (e) {
       let msg = 'Registration failed';
       if (e?.response?.data?.error) {
-        if (typeof e.response.data.error === 'string') msg = e.response.data.error;
-        else if (e.response.data.error.formErrors) msg = Object.values(e.response.data.error.formErrors.fieldErrors || {}).join(', ');
+        if (typeof e.response.data.error === 'string') {
+          msg = e.response.data.error;
+        } else {
+          const fieldErrors = e.response.data.error.fieldErrors || {};
+          const errorList = Object.values(fieldErrors).flat().filter(Boolean);
+          if (errorList.length > 0) {
+            msg = errorList.join(', ');
+          } else if (Array.isArray(e.response.data.error.formErrors) && e.response.data.error.formErrors.length > 0) {
+            msg = e.response.data.error.formErrors.join(', ');
+          }
+        }
       }
       showToast(msg, 'error');
     } finally {
