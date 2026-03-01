@@ -4,19 +4,22 @@ import path from 'path';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const backendUrl = (env.BACKEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
+  const backendUrl = env.BACKEND_URL?.trim().replace(/\/+$/, '');
+  const proxy = backendUrl
+    ? {
+        '/api': {
+          target: backendUrl,
+          changeOrigin: true
+        }
+      }
+    : undefined;
 
   return {
     plugins: [react()],
     envPrefix: ['VITE_', 'BACKEND_', 'FRONTEND_'],
     server: {
       port: 5173,
-      proxy: {
-        '/api': {
-          target: backendUrl,
-          changeOrigin: true
-        }
-      }
+      proxy
     },
     resolve: {
       alias: {

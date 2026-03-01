@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { showToast } from '@/components/toastService.js';
 
-const backendUrl = (import.meta.env.BACKEND_URL).replace(/\/+$/, '');
-const API_URL = `${backendUrl}/api`;
+const backendUrl = import.meta.env.BACKEND_URL?.trim();
+const API_URL = backendUrl ? `${backendUrl.replace(/\/+$/, '')}/api` : '/api';
 
 export const api = axios.create({ baseURL: API_URL });
 
