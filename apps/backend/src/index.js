@@ -41,6 +41,22 @@ app.use('/api/user', rateLimit('api'), userRoutes);
 app.use('/api/breach', rateLimit('api'), breachRoutes);
 app.use('/api/wallet', rateLimit('api'), walletRoutes);
 
+app.use((err, req, res, next) => {
+  console.error('[Unhandled API Error]', {
+    method: req.method,
+    path: req.originalUrl,
+    message: err?.message,
+    code: err?.code,
+    stack: err?.stack,
+  });
+
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  return res.status(err?.status || 500).json({ error: 'Internal server error' });
+});
+
 
 // Initialize database migrations
 async function start() {
@@ -71,4 +87,12 @@ async function start() {
 start().catch(e => {
   console.error('Failed to start server:', e);
   process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[Unhandled Rejection]', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('[Uncaught Exception]', error);
 });

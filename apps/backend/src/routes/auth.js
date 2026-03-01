@@ -24,33 +24,33 @@ router.post("/register", async (req, res) => {
     return res.status(400).json({ error: parse.error.flatten() });
 
   const { email, password } = parse.data;
-  // const client = await db.pool.connect();
+  const client = await db.pool.connect();
   try {
-    await db.query("BEGIN");
+    await client.query("BEGIN");
     // Check email uniqueness
-    const emailExists = await db.query(
+    const emailExists = await client.query(
       "SELECT 1 FROM account.users WHERE email=$1",
       [email.toLowerCase()],
     );
     if (emailExists.rowCount > 0) {
-      await db.query("ROLLBACK");
+      await client.query("ROLLBACK");
       return res.status(409).json({ error: "Email already registered" });
     }
 
     const hash = await bcrypt.hash(password, 12);
-    const insert = await db.query(
+    const insert = await client.query(
       "INSERT INTO account.users(email,password,status) VALUES($1,$2,'active') RETURNING id,email",
       [email.toLowerCase(), hash],
     );
     const user = insert.rows[0];
 
     // Tạo profile mặc định cho user mới (dùng email làm display_name tạm thời)
-    await db.query(
+    await client.query(
       "INSERT INTO account.profiles (account_id, display_name) VALUES ($1, $2)",
       [user.id, user.email],
     );
 
-    await db.query("COMMIT");
+    await client.query("COMMIT");
 
     const token = jwt.sign(
       { sub: user.id, email: user.email },
@@ -70,9 +70,15 @@ router.post("/register", async (req, res) => {
 
     res.status(201).json({ token, user: { id: user.id, email: user.email } });
   } catch (e) {
-    await db.query("ROLLBACK");
+    try {
+      await client.query("ROLLBACK");
+    } catch (_rollbackError) {
+      // ignore rollback errors to avoid masking original failure
+    }
     console.error("Register error:", e.message, e.code, e.detail);
     res.status(500).json({ error: "Registration failed" });
+  } finally {
+    client.release();
   }
 });
 
