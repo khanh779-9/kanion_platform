@@ -4,7 +4,7 @@ import path from 'path';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const backendUrl = env.BACKEND_URL?.trim().replace(/\/+$/, '');
+  const backendUrl = (env.VITE_BACKEND_URL || env.BACKEND_URL || '').trim().replace(/\/+$/, '');
   const proxy = backendUrl
     ? {
         '/api': {
