@@ -1,18 +1,14 @@
-FROM node:20-bookworm-slim
-
+FROM node:20-bookworm-slim AS build
 WORKDIR /app
-
-# Install backend dependencies
 COPY package.json ./
 RUN npm install
-
-# Copy backend source
 COPY . .
+RUN npm run build
 
-ENV NODE_ENV=production
-
-# Render injects PORT automatically
+FROM node:20-bookworm-slim
+WORKDIR /app
+RUN npm install -g serve
+COPY --from=build /app/dist ./dist
 EXPOSE 8080
-
-CMD ["npm", "run", "dev"]
+CMD ["serve", "-s", "dist", "-l", "8080"]
 
