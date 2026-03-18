@@ -5,6 +5,7 @@ import path from 'path';
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const backendUrl = (env.VITE_BACKEND_URL || env.BACKEND_URL || '').trim().replace(/\/+$/, '');
+  const port = parseInt(env.PORT, 10) || 5173;
   const proxy = backendUrl
     ? {
         '/api': {
@@ -18,7 +19,7 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     envPrefix: ['VITE_', 'BACKEND_', 'FRONTEND_'],
     server: {
-      port: 5173,
+      port,
       proxy
     },
     resolve: {
