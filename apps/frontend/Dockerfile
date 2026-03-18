@@ -1,17 +1,19 @@
-# Dockerfile for Frontend (Vite + React)
-FROM node:20-bookworm-slim AS build
-WORKDIR /app
-COPY package.json ./
-RUN npm install -g pnpm && pnpm install
+FROM node:20-bookworm-slim
 
+WORKDIR /app
+
+# Install backend dependencies
+COPY package.json ./
+RUN npm install --omit=dev
+
+# Copy backend source
 COPY . .
 RUN rm -f .env
-RUN pnpm run build
 
-# Production image
-FROM node:20-bookworm-slim
-WORKDIR /app
-RUN npm install -g serve
-COPY --from=build /app/dist ./dist
+ENV NODE_ENV=production
+
+# Render injects PORT automatically
 EXPOSE 8080
-CMD ["serve", "-s", "dist", "-l", "8080"]
+
+CMD ["npm", "run", "dev"]
+
