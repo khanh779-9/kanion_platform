@@ -27,10 +27,12 @@ if (!allowAll) {
   app.use(helmet());
 }
 app.use(cors({
-  origin: allowAll ? '*' : config.frontendUrl,
-  credentials: allowAll ? false : true,
+  // origin: allowAll ? '*' : config.frontendUrl,
+  origin: '*',
+  // credentials: allowAll ? false : true,
+  credentials: false,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  // allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 app.use(express.json({ limit: '1mb' }));
