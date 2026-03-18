@@ -83,44 +83,114 @@ async function start() {
   app.get("/", (req, res) => {
     res.json({
       message: "Welcome to Kanion Secure Space API!",
-      docs: "https://github.com/your-org/kanion-platform#api-docs",
       endpoints: {
         auth: {
-          register: { method: "POST", path: "/api/auth/register", body: { email: "string", password: "string" } },
-          login: { method: "POST", path: "/api/auth/login", body: { email: "string", password: "string" } },
+          register: {
+            method: "POST",
+            path: "/api/auth/register",
+            body: {
+              email: "user@example.com",
+              password: "yourPassword"
+            }
+          },
+          login: {
+            method: "POST",
+            path: "/api/auth/login",
+            body: {
+              email: "user@example.com",
+              password: "yourPassword"
+            }
+          },
           logout: { method: "POST", path: "/api/auth/logout" },
           me: { method: "GET", path: "/api/auth/me" }
         },
         vault: {
           list: { method: "GET", path: "/api/vault" },
-          create: { method: "POST", path: "/api/vault", body: { ... } },
+          create: {
+            method: "POST",
+            path: "/api/vault",
+            body: {
+              name: "My Vault",
+              description: "Optional description"
+            }
+          },
           get: { method: "GET", path: "/api/vault/:id" },
-          update: { method: "PUT", path: "/api/vault/:id", body: { ... } },
+          update: {
+            method: "PUT",
+            path: "/api/vault/:id",
+            body: {
+              name: "Updated Vault Name",
+              description: "Updated description"
+            }
+          },
           delete: { method: "DELETE", path: "/api/vault/:id" }
         },
         notes: {
           list: { method: "GET", path: "/api/notes" },
-          create: { method: "POST", path: "/api/notes", body: { ... } },
+          create: {
+            method: "POST",
+            path: "/api/notes",
+            body: {
+              title: "Note title",
+              content: "Note content"
+            }
+          },
           get: { method: "GET", path: "/api/notes/:id" },
-          update: { method: "PUT", path: "/api/notes/:id", body: { ... } },
+          update: {
+            method: "PUT",
+            path: "/api/notes/:id",
+            body: {
+              title: "Updated title",
+              content: "Updated content"
+            }
+          },
           delete: { method: "DELETE", path: "/api/notes/:id" }
         },
         user: {
           profile: { method: "GET", path: "/api/user/profile" },
-          update: { method: "PUT", path: "/api/user/profile", body: { ... } }
+          update: {
+            method: "PUT",
+            path: "/api/user/profile",
+            body: {
+              displayName: "New Name",
+              avatar: "https://example.com/avatar.png"
+            }
+          }
         },
         breach: {
-          check: { method: "POST", path: "/api/breach/check", body: { email: "string" } }
+          check: {
+            method: "POST",
+            path: "/api/breach/check",
+            body: {
+              email: "user@example.com"
+            }
+          }
         },
         wallet: {
           list: { method: "GET", path: "/api/wallet" },
-          create: { method: "POST", path: "/api/wallet", body: { ... } },
+          create: {
+            method: "POST",
+            path: "/api/wallet",
+            body: {
+              name: "My Wallet",
+              type: "bank|crypto|cash",
+              balance: 0
+            }
+          },
           get: { method: "GET", path: "/api/wallet/:id" },
-          update: { method: "PUT", path: "/api/wallet/:id", body: { ... } },
+          update: {
+            method: "PUT",
+            path: "/api/wallet/:id",
+            body: {
+              name: "Updated Wallet Name",
+              type: "bank|crypto|cash",
+              balance: 1000
+            }
+          },
           delete: { method: "DELETE", path: "/api/wallet/:id" }
         }
       },
-      note: "Replace :id with the actual resource ID. Fields in body are examples, see docs for full schema. All endpoints return JSON."
+      note: "Replace :id with the actual resource ID. Fields in body are example payloads. All endpoints return JSON. See docs for full schema."
     });
   });
 
