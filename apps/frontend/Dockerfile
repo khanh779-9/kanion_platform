@@ -3,7 +3,9 @@ FROM node:20-bookworm-slim AS build
 WORKDIR /app
 COPY package.json ./
 RUN npm install -g pnpm && pnpm install
+
 COPY . .
+RUN rm -f .env
 RUN pnpm run build
 
 # Production image
