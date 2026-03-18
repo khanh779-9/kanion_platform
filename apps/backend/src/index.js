@@ -78,6 +78,52 @@ async function start() {
 
 
   app.use(express.static(path.join(__dirname, "../public")));
+
+  // API root: show JSON instructions
+  app.get("/", (req, res) => {
+    res.json({
+      message: "Welcome to Kanion Secure Space API!",
+      docs: "https://github.com/your-org/kanion-platform#api-docs",
+      endpoints: {
+        auth: {
+          register: { method: "POST", path: "/api/auth/register", body: { email: "string", password: "string" } },
+          login: { method: "POST", path: "/api/auth/login", body: { email: "string", password: "string" } },
+          logout: { method: "POST", path: "/api/auth/logout" },
+          me: { method: "GET", path: "/api/auth/me" }
+        },
+        vault: {
+          list: { method: "GET", path: "/api/vault" },
+          create: { method: "POST", path: "/api/vault", body: { ... } },
+          get: { method: "GET", path: "/api/vault/:id" },
+          update: { method: "PUT", path: "/api/vault/:id", body: { ... } },
+          delete: { method: "DELETE", path: "/api/vault/:id" }
+        },
+        notes: {
+          list: { method: "GET", path: "/api/notes" },
+          create: { method: "POST", path: "/api/notes", body: { ... } },
+          get: { method: "GET", path: "/api/notes/:id" },
+          update: { method: "PUT", path: "/api/notes/:id", body: { ... } },
+          delete: { method: "DELETE", path: "/api/notes/:id" }
+        },
+        user: {
+          profile: { method: "GET", path: "/api/user/profile" },
+          update: { method: "PUT", path: "/api/user/profile", body: { ... } }
+        },
+        breach: {
+          check: { method: "POST", path: "/api/breach/check", body: { email: "string" } }
+        },
+        wallet: {
+          list: { method: "GET", path: "/api/wallet" },
+          create: { method: "POST", path: "/api/wallet", body: { ... } },
+          get: { method: "GET", path: "/api/wallet/:id" },
+          update: { method: "PUT", path: "/api/wallet/:id", body: { ... } },
+          delete: { method: "DELETE", path: "/api/wallet/:id" }
+        }
+      },
+      note: "Replace :id with the actual resource ID. Fields in body are examples, see docs for full schema. All endpoints return JSON."
+    });
+  });
+
   // Fallback: return JSON 404 for non-API, non-static routes
   app.get("*", (req, res) => {
     res.status(404).json({ error: "Not found" });
