@@ -8,7 +8,6 @@ RUN npm install --omit=dev
 
 # Copy backend source
 COPY . .
-RUN rm -f .env
 
 ENV NODE_ENV=production
 
