@@ -1,7 +1,7 @@
 # Dockerfile for Frontend (Vite + React)
 FROM node:20-bookworm-slim AS build
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
+COPY package.json ./
 RUN npm install -g pnpm && pnpm install
 COPY . .
 RUN pnpm run build
