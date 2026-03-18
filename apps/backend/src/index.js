@@ -77,8 +77,11 @@ async function start() {
   }
 
 
-  app.use(express.static(path.join(__dirname, "../public"))); 
-  app.get("*", (req, res) => { res.sendFile(path.join(__dirname, "../public/index.html")); });
+  app.use(express.static(path.join(__dirname, "../public")));
+  // Fallback: return JSON 404 for non-API, non-static routes
+  app.get("*", (req, res) => {
+    res.status(404).json({ error: "Not found" });
+  });
   
   app.listen(config.port, () => {
     console.log(`Kanion Secure Space API listening on ${config.backendUrl}`);
