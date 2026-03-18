@@ -22,10 +22,13 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // Security Middleware
-app.use(helmet());
+const allowAll = !config.frontendUrl || config.frontendUrl === '*';
+if (!allowAll) {
+  app.use(helmet());
+}
 app.use(cors({
-  origin: config.frontendUrl === '*' ? '*' : config.frontendUrl,
-  credentials: true,
+  origin: allowAll ? '*' : config.frontendUrl,
+  credentials: allowAll ? false : true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
